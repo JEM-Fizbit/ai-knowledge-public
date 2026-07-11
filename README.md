@@ -1,14 +1,16 @@
 # ai-knowledge-public
 
-A public mirror of selected protocols from a larger private protocol library — reusable practices for AI-assisted software development, written to be read by both humans and coding agents (Claude Code, and similar).
-
-Currently mirrors the **development-lifecycle cluster**: the protocols that cover a project's path from a rough idea through initiation, scaffolding, ongoing work tracking, execution discipline, verification, and multi-session continuity — plus an AI-feature quality band (evals + observability) for projects that make LLM calls.
+A public mirror of selected protocols from a larger private protocol library — reusable practices for AI-assisted software development, written to be read by both humans and coding agents (Claude Code, and similar). Grows over time as more protocols get mirrored out; not limited to one topic.
 
 ## Start here
 
-[`protocols/DEVELOPMENT_LIFECYCLE.md`](protocols/DEVELOPMENT_LIFECYCLE.md) is the map — it shows how the other files fit together and links out to each one.
+[`protocols/DEVELOPMENT_LIFECYCLE.md`](protocols/DEVELOPMENT_LIFECYCLE.md) is the map for the development-lifecycle cluster below — it shows how those files fit together and links out to each one.
 
 ## What's included
+
+### Development-lifecycle cluster
+
+A project's path from a rough idea through initiation, scaffolding, ongoing work tracking, execution discipline, verification, and multi-session continuity — plus an AI-feature quality band (evals + observability) for projects that make LLM calls.
 
 | Protocol | Covers |
 |---|---|
@@ -22,6 +24,14 @@ Currently mirrors the **development-lifecycle cluster**: the protocols that cove
 | [`SESSION_HANDOFF_SAVE_POINTS.md`](protocols/SESSION_HANDOFF_SAVE_POINTS.md) | Multi-session continuity docs (Resume) |
 | [`AI_EVALS.md`](protocols/AI_EVALS.md) | Regression evals for AI/LLM output quality |
 | [`AI_OBSERVABILITY.md`](protocols/AI_OBSERVABILITY.md) | Runtime observability for AI/LLM calls |
+
+### Reference protocols
+
+Standalone technical guides, not tied to the lifecycle spine above.
+
+| Protocol | Covers |
+|---|---|
+| [`LOCAL_LLM_OLLAMA.md`](protocols/LOCAL_LLM_OLLAMA.md) | Installing, running, and configuring local AI models on Apple Silicon with Ollama |
 
 ## Scope note
 
