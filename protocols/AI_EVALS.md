@@ -5,8 +5,8 @@
 > **Lifecycle:** extends the **Verify** phase for AI-powered projects — see [`DEVELOPMENT_LIFECYCLE.md`](DEVELOPMENT_LIFECYCLE.md) for how this fits with the other workflow protocols.
 
 **Applies to:** Any AI-powered project that produces non-deterministic LLM output where quality matters (scoring, classification, extraction, ranking, generation). Tiered — minimum is one golden set + one `eval:*` command.
-**Last Updated:** 2026-07-05
-**Version:** 1.3
+**Last Updated:** 2026-07-20
+**Version:** 1.4
 
 ---
 
@@ -52,7 +52,7 @@ This protocol is the lean version: a curated set of real examples, a runner that
 
 **Build an eval for the *task*, not for every change.** A golden set earns its keep when the output is high-volume or drift-prone (a model shifting under you, a prompt regression degrading at scale) — reserve it for those. Don't reflexively add one to every call site or every refactor; that's the over-verification the [`QA_PROTOCOL.md`](QA_PROTOCOL.md) tiering warns against. The eval-worthy tasks tend to map onto the SLM-migration candidates, because "is this drift-prone enough to guard" and "is this safe to move to a local model" are the same question answered by the same measuring stick.
 
-Start with the **most eval-able output first**: deterministic-ish (low temperature), bounded (a number, a label, a short structured object), and backed by abundant real data. On a solo AI content app that was signal scoring (`temperature: 0`, `relevance 0–1 + reason`). Generation/chat is harder (subjective, multi-turn) — come to it later with an LLM-judge. Inherently variable structured output (e.g. a digest's grouping + headlines) is eval-able too, but **validity-first** (absolute gates: schema-valid, length-bounded, grouping-respects-clusters) with a soft "agreement vs the prior anchor" signal — not an exact-match MAE.
+Start with the **most eval-able output first**: deterministic-ish (low temperature), bounded (a number, a label, a short structured object), and backed by abundant real data. On a solo AI content app that was signal scoring (`temperature: 0`, `relevance 0–1 + reason`). Generation/chat is harder (subjective, multi-turn) — for owner-operated apps, capture the real human evaluator's verdicts first ([HUMAN_FEEDBACK_CAPTURE.md](HUMAN_FEEDBACK_CAPTURE.md)); reach for an LLM-judge only when volume outgrows the operator's eyes, calibrated against those verdicts. Inherently variable structured output (e.g. a digest's grouping + headlines) is eval-able too, but **validity-first** (absolute gates: schema-valid, length-bounded, grouping-respects-clusters) with a soft "agreement vs the prior anchor" signal — not an exact-match MAE.
 
 ---
 
@@ -165,6 +165,7 @@ Source: an AI signal-scoring pilot's (pharma domain) rubric-judge work — the n
 
 - [AI_OBSERVABILITY.md](AI_OBSERVABILITY.md) — the runtime companion; share the weekly digest
 - [QA_PROTOCOL.md](QA_PROTOCOL.md) — evals are tier-Full verification for AI-output changes
+- [HUMAN_FEEDBACK_CAPTURE.md](HUMAN_FEEDBACK_CAPTURE.md) — the human-in-the-loop companion: operator ratings with frozen context for subjective/generative output; supplies this protocol's ground-truth subset
 - `SIGNAL_SCORING_ARCHITECTURE.md` — an example scorer this pattern was first built against
 - `ANTHROPIC_MODEL_REFERENCE.md` — choosing the model for the eval path
 - `AUDIT_ROUTINE_STANDARD.md` / `SLACK_OPS_NOTIFICATION.md` — the weekly digest delivery
@@ -176,6 +177,7 @@ Source: an AI signal-scoring pilot's (pharma domain) rubric-judge work — the n
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.4 | 2026-07-20 | Cross-linked [HUMAN_FEEDBACK_CAPTURE.md](HUMAN_FEEDBACK_CAPTURE.md) as the first move for subjective/generative output on owner-operated apps; LLM-judge repositioned as the volume-outgrows-operator escalation. |
 | 1.3 | 2026-07-05 | Updated the validation link to the archived shipped spec path and repaired stale footer metadata. |
 | 1.2 | 2026-06-12 | Added the "build an eval for the task, not every change" heuristic: structure-only refactors get unit tests + spot-checks; golden sets are reserved for high-volume, drift-prone, or SLM-candidate tasks; inherently variable structured output uses validity-first gates. |
 | 1.1 | 2026-06-08 | Added the "lenient absolute LLM-judge (ceiling effect)" anti-pattern + its four fixes (critic-first, strict anchoring, cross-model cite-forcing, distribution-tuned thresholds), from a rubric-judge pilot in the pharma domain. |
@@ -183,5 +185,5 @@ Source: an AI signal-scoring pilot's (pharma domain) rubric-judge work — the n
 
 ---
 
-**Protocol Version:** 1.3
-**Last Updated:** 2026-07-05
+**Protocol Version:** 1.4
+**Last Updated:** 2026-07-20

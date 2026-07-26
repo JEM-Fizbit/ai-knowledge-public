@@ -5,8 +5,8 @@
 > **Lifecycle:** the **Scaffold** phase — see [`DEVELOPMENT_LIFECYCLE.md`](DEVELOPMENT_LIFECYCLE.md) for how this fits with the other workflow protocols.
 
 **Applies to:** All new project repositories
-**Last Updated:** 2026-06-27
-**Version:** 1.9
+**Last Updated:** 2026-07-15
+**Version:** 1.10
 
 ---
 
@@ -451,9 +451,10 @@ gh auth status  # verify correct account
 | 1.6 | 2026-06-04 | Step 8 (multi-repo audit path) rewritten for a **generalized multi-repo auditor**. The trigger prompt is now repo-agnostic; each repo self-describes via an optional audit-config file (generic checks always run; config-driven checks — version coherence, retired terminology, roadmap chronology, spec-index, env coherence — activate per field). Adding a repo = drop the config file + register its URL with the trigger. Previously the trigger was hardcoded to a single repo, so "add a repo" was a silent no-op for others. |
 | 1.7 | 2026-06-22 | Step 2 expanded to cover project-specific runtime state before agents, LaunchAgents, sync loops, OAuth smoke flows, or desktop launchers start writing: token caches, daemon logs, lock/health files, generated latency snapshots, sync cursors, and smoke/canary artifacts. Cross-linked to GIT_CONVENTIONS.md runtime-state rule. |
 | 1.8 | 2026-06-25 | Step 3a expanded from dependency baseline to dependency/tooling baseline: package-manager policy, runtime pins, system/local dependencies, and script safety categories now ride with initial project setup. Cross-linked to DEPENDENCY_HYGIENE.md v1.1. |
+| 1.10 | 2026-07-15 | Step 5a: the work/org assets register moved to a shared cloud-drive home; path references updated. Applies only if you keep a separate org register — the personal path is unchanged. Synced copies propagate on each consumer's next commit. |
 | 1.9 | 2026-06-27 | Added required Step 3d protocol surfacing so new durable repos sync relevant protocols locally and expose exact trigger -> local protocol lines in project instructions. Driven by protocol-invocation drift eval showing generic pointers are weaker than exact local protocol names. |
 
 ---
 
-**Protocol Version**: 1.9
-**Last Updated**: 2026-06-27
+**Protocol Version**: 1.10
+**Last Updated**: 2026-07-15

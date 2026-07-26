@@ -24,6 +24,7 @@ A project's path from a rough idea through initiation, scaffolding, ongoing work
 | [`SESSION_HANDOFF_SAVE_POINTS.md`](protocols/SESSION_HANDOFF_SAVE_POINTS.md) | Multi-session continuity docs (Resume) |
 | [`AI_EVALS.md`](protocols/AI_EVALS.md) | Regression evals for AI/LLM output quality |
 | [`AI_OBSERVABILITY.md`](protocols/AI_OBSERVABILITY.md) | Runtime observability for AI/LLM calls |
+| [`HUMAN_FEEDBACK_CAPTURE.md`](protocols/HUMAN_FEEDBACK_CAPTURE.md) | Capturing operator quality verdicts on generative output (the human half of the eval band) |
 
 ### Reference protocols
 
