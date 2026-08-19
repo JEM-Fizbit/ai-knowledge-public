@@ -5,8 +5,8 @@
 > **Lifecycle:** the **Scaffold** phase — see [`DEVELOPMENT_LIFECYCLE.md`](DEVELOPMENT_LIFECYCLE.md) for how this fits with the other workflow protocols.
 
 **Applies to:** All new project repositories
-**Last Updated:** 2026-07-15
-**Version:** 1.10
+**Last Updated:** 2026-07-30
+**Version:** 1.11
 
 ---
 
@@ -320,6 +320,24 @@ If you run a scheduled agent that checks project documentation for staleness, br
 
 For a multi-repo auditor, the lowest-friction design is to make the prompt repo-agnostic and let each repo self-describe its own audit needs via an optional config file (declaring things like staleness-check paths, version sources, retired terminology, and protected paths) — omitted fields just fall back to safe generic checks. Adding a repo is then: drop the config file, then register the repo's URL with the trigger.
 
+> ⚠️ **Before registering a repo, establish whether your scheduler's update call merges or replaces.**
+> An update that looks partial at the top level may replace the *nested* config wholesale — and a
+> partial one can destroy the trigger's prompt silently, returning success while dropping the whole
+> instruction set and resetting the tool allowlist to a default preset. Nothing errors. A shared
+> multi-repo auditor then keeps firing on schedule with no instructions and the wrong toolset, and
+> nothing surfaces until someone notices a run produced nothing. That is not a risk to be careful
+> around; it is a silent success, which is worse.
+>
+> **Procedure.** Read the current config first — that read is your only rollback. Send it back
+> *complete* with your addition rather than sending just the delta, including any field the API
+> validates as required. Afterwards, verify: re-read the tool allowlist, and if it shows a long
+> default preset instead of the trigger's own short list, the prompt went with it — restore from the
+> read you took first.
+>
+> **Probe on a throwaway, never on a live trigger other repos depend on.** Check whether your
+> scheduler even exposes a delete action before you start creating probes; if it does not, create
+> them disabled with a far-future schedule and remove them by hand in its UI.
+
 ### Step 9: Commit & Push
 
 ```bash
@@ -451,10 +469,11 @@ gh auth status  # verify correct account
 | 1.6 | 2026-06-04 | Step 8 (multi-repo audit path) rewritten for a **generalized multi-repo auditor**. The trigger prompt is now repo-agnostic; each repo self-describes via an optional audit-config file (generic checks always run; config-driven checks — version coherence, retired terminology, roadmap chronology, spec-index, env coherence — activate per field). Adding a repo = drop the config file + register its URL with the trigger. Previously the trigger was hardcoded to a single repo, so "add a repo" was a silent no-op for others. |
 | 1.7 | 2026-06-22 | Step 2 expanded to cover project-specific runtime state before agents, LaunchAgents, sync loops, OAuth smoke flows, or desktop launchers start writing: token caches, daemon logs, lock/health files, generated latency snapshots, sync cursors, and smoke/canary artifacts. Cross-linked to GIT_CONVENTIONS.md runtime-state rule. |
 | 1.8 | 2026-06-25 | Step 3a expanded from dependency baseline to dependency/tooling baseline: package-manager policy, runtime pins, system/local dependencies, and script safety categories now ride with initial project setup. Cross-linked to DEPENDENCY_HYGIENE.md v1.1. |
-| 1.10 | 2026-07-15 | Step 5a: the work/org assets register moved to a shared cloud-drive home; path references updated. Applies only if you keep a separate org register — the personal path is unchanged. Synced copies propagate on each consumer's next commit. |
 | 1.9 | 2026-06-27 | Added required Step 3d protocol surfacing so new durable repos sync relevant protocols locally and expose exact trigger -> local protocol lines in project instructions. Driven by protocol-invocation drift eval showing generic pointers are weaker than exact local protocol names. |
+| 1.10 | 2026-07-15 | Step 5a: the work/org assets register moved to a shared cloud-drive home; path references updated. Applies only if you keep a separate org register — the personal path is unchanged. Synced copies propagate on each consumer's next commit. |
+| 1.11 | 2026-07-30 | Step 8: corrected the trigger-update warning. "Send the full config to avoid clobbering the nested prompt" read as a risk; the observed behaviour is a **silent success** that drops the trigger's entire prompt *and* resets its tool allowlist to a default preset, leaving a shared auditor firing on schedule with no instructions. Added the verified procedure (read first as your rollback; required fields are validated), a post-update verification (allowlist still the trigger's own short list, not the long preset), and the note to probe update semantics on a disabled far-future throwaway rather than a live trigger. Established empirically while registering a new repo. |
 
 ---
 
-**Protocol Version**: 1.10
-**Last Updated**: 2026-07-15
+**Protocol Version**: 1.11
+**Last Updated**: 2026-07-30
