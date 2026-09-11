@@ -6,8 +6,8 @@
 > **Lifecycle:** the **Resume** phase — see [`DEVELOPMENT_LIFECYCLE.md`](DEVELOPMENT_LIFECYCLE.md) for how this fits with the other workflow protocols.
 
 **Applies to:** Multi-session technical work in any project (code or research), any AI surface
-**Last Updated:** 2026-06-11
-**Version:** 1.0
+**Last Updated:** 2026-09-09
+**Version:** 1.1
 
 ---
 
@@ -153,10 +153,13 @@ The save point is only as good as its inbound pointers. On every save:
 - Related: `ROADMAP_AND_BACKLOG.md` (work tracking the save point points into),
   `CLAUDE_INSTRUCTION_LAYERS.md` (slim-pointer rule), `COWORK_PROJECT_INIT.md`
   (NOW.md/JOURNAL.md standing-state model for research workspaces),
-  `LLM_CONTEXT_MEMORY_ARCHITECTURE.md` (why conversation context degrades)
+  `LLM_CONTEXT_MEMORY_ARCHITECTURE.md` (why conversation context degrades), and
+  `CROSS_AGENT_HANDOFF_BUS.md` when unfinished work must cross an agent,
+  platform, or project boundary rather than only resume inside one project.
 
 ---
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.1 | 2026-09-09 | Distinguished in-project save points from the cross-agent handoff bus and linked the new governing protocol. |
 | 1.0 | 2026-06-11 | Initial release. Generalized from a personal ML-simulation project's session handoff doc after it proved both lifecycle directions (cold-start resume + milestone close-out) within 24 hours. |
