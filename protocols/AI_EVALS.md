@@ -5,8 +5,8 @@
 > **Lifecycle:** extends the **Verify** phase for AI-powered projects — see [`DEVELOPMENT_LIFECYCLE.md`](DEVELOPMENT_LIFECYCLE.md) for how this fits with the other workflow protocols.
 
 **Applies to:** Any AI-powered project that produces non-deterministic LLM output where quality matters (scoring, classification, extraction, ranking, generation). Tiered — minimum is one golden set + one `eval:*` command.
-**Last Updated:** 2026-07-20
-**Version:** 1.4
+**Last Updated:** 2026-09-04
+**Version:** 1.5
 
 ---
 
@@ -46,6 +46,7 @@ This protocol is the lean version: a curated set of real examples, a runner that
 | A task you may later move to a cheaper/local model (SLM migration candidate) | **Yes — the eval is the side-by-side measuring stick that decision needs** |
 | AI-powered project heading to production | **Yes — design it in from the start**, don't bolt on later |
 | **Structure-only refactor** of an existing call (same prompt/model — e.g. swapping the output envelope to forced tool-use) | **No** — unit-test the pure parse helper + a spot-check; a golden set adds ~nothing (the change is behaviour-neutral by construction) |
+| **Moving prompts from a hosted store into code** (same text, same settings — e.g. off OpenAI stored prompt objects before the 2026-11-30 `v1/prompts` shutdown) | **No** — the gate is a golden *payload* fixture: a unit test that snapshots the exact provider request per prompt, so the migration is byte-faithful and every later prompt edit surfaces as a reviewable diff (pattern proven in an owner-operated app: a shared prompt-request fixture test). A golden set measures output quality, which this change does not touch |
 | Low-volume, user-facing one-shot output (a single generation the user sees and judges immediately) | **No / lower priority** — failures are immediately visible; unit tests + manual check suffice |
 | Deterministic code path (no LLM) | No — ordinary unit/integration tests |
 | Throwaway script / prototype | No |
@@ -164,8 +165,8 @@ Source: an AI signal-scoring pilot's (pharma domain) rubric-judge work — the n
 ## Resources
 
 - [AI_OBSERVABILITY.md](AI_OBSERVABILITY.md) — the runtime companion; share the weekly digest
-- [QA_PROTOCOL.md](QA_PROTOCOL.md) — evals are tier-Full verification for AI-output changes
 - [HUMAN_FEEDBACK_CAPTURE.md](HUMAN_FEEDBACK_CAPTURE.md) — the human-in-the-loop companion: operator ratings with frozen context for subjective/generative output; supplies this protocol's ground-truth subset
+- [QA_PROTOCOL.md](QA_PROTOCOL.md) — evals are tier-Full verification for AI-output changes
 - `SIGNAL_SCORING_ARCHITECTURE.md` — an example scorer this pattern was first built against
 - `ANTHROPIC_MODEL_REFERENCE.md` — choosing the model for the eval path
 - `AUDIT_ROUTINE_STANDARD.md` / `SLACK_OPS_NOTIFICATION.md` — the weekly digest delivery
@@ -177,6 +178,7 @@ Source: an AI signal-scoring pilot's (pharma domain) rubric-judge work — the n
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.5 | 2026-09-04 | Added the hosted-prompt-to-code migration row: the gate is a golden payload fixture test (request faithfulness), not a golden set (output quality). |
 | 1.4 | 2026-07-20 | Cross-linked [HUMAN_FEEDBACK_CAPTURE.md](HUMAN_FEEDBACK_CAPTURE.md) as the first move for subjective/generative output on owner-operated apps; LLM-judge repositioned as the volume-outgrows-operator escalation. |
 | 1.3 | 2026-07-05 | Updated the validation link to the archived shipped spec path and repaired stale footer metadata. |
 | 1.2 | 2026-06-12 | Added the "build an eval for the task, not every change" heuristic: structure-only refactors get unit tests + spot-checks; golden sets are reserved for high-volume, drift-prone, or SLM-candidate tasks; inherently variable structured output uses validity-first gates. |
@@ -185,5 +187,5 @@ Source: an AI signal-scoring pilot's (pharma domain) rubric-judge work — the n
 
 ---
 
-**Protocol Version:** 1.4
-**Last Updated:** 2026-07-20
+**Protocol Version:** 1.5
+**Last Updated:** 2026-09-04
