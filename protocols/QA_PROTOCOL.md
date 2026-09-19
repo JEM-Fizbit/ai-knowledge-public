@@ -5,8 +5,8 @@
 > **Lifecycle:** the **Verify** phase — see [`DEVELOPMENT_LIFECYCLE.md`](DEVELOPMENT_LIFECYCLE.md) for how this fits with the other workflow protocols.
 
 **Applies to:** Any active development project. Tiered adoption — minimum is a one-line `qa:quick` style command and the tier rubric. Manual checklists, hard gates, and design-QA audit docs are opt-in per project surface area.
-**Last Updated:** 2026-06-06
-**Version:** 1.0
+**Last Updated:** 2026-09-19
+**Version:** 1.1
 
 ---
 
@@ -94,7 +94,7 @@ When unsure, escalate one tier. Cost of running a slightly heavier check is low;
 
 | Tier | What runs | When to use | Typical examples |
 |------|-----------|-------------|------------------|
-| **Skip** | Nothing | Pure prose/docs/non-code edits, isolated styling that can't break logic | README fixes, copy tweaks in static text, color-token swaps in a single component |
+| **Skip** | Nothing (a link check for docs) | Pure prose/docs/non-code edits, isolated styling that can't break logic — unless a test parses the file (step 4) | README fixes, backlog / bibliography / memo edits, copy tweaks in static text, color-token swaps in a single component |
 | **Quick** | Lint + typecheck (and any sub-second checks) | Code edits with localized blast radius, no shared-data-flow involvement | Single-component changes, isolated utility tweaks, internal refactors that don't cross module boundaries |
 | **Full** | Quick + production build + automated tests (unit / E2E as relevant) + manual verification where applicable | Cross-cutting changes, anything that touches shared data flow, API surface, or framework wiring | Component changes used across pages, API route edits, schema changes, signal/ingestion pipeline edits, dependency bumps, AI prompt restructuring, auth/permissions, publishing flow |
 
@@ -105,7 +105,7 @@ Walk this checklist top-to-bottom and stop at the first match:
 1. **Hard gate fires?** → Run the hard-gate check unconditionally, *and* continue to tier selection.
 2. **Touches shared data flow, API surface, schema, dependencies, or framework wiring?** → **Full**.
 3. **Touches code (TS/TSX/JS/Python/etc.) but blast radius is localized?** → **Quick**.
-4. **Pure prose / non-code / trivially isolated visual edit?** → **Skip**.
+4. **Pure prose / non-code / trivially isolated visual edit?** → **Skip** — *unless a test parses that file.* Doc↔code invariant tests (a test that reads `CLAUDE.md` to pin a constant, a command list or a charter paragraph against the code; a test that reads a protocol's table or a pricing file) make that file part of the test surface. Find them with `grep -rl <filename> tests/` and run exactly those tests — a targeted Quick, seconds, not Full. Markdown no test reads gets a link check and nothing else; a project's `CLAUDE.md` must not say "full suite before every commit" (see the last example below).
 
 When two cases apply, the higher tier wins. When uncertain, escalate one tier.
 
@@ -118,6 +118,7 @@ When two cases apply, the higher tier wins. When uncertain, escalate one tier.
 - **Solo game project, balance number tweak in `src/data/*.json`** → Skip + unit tests if any cover the formula
 - **Solo game project, new enemy AI behavior** → Full (`npm test` + `npm run test:e2e`)
 - **Solo game project, refactor that changes a core component shape** → Full + audit doc if blast radius is unclear
+- **Solo Python research platform, backlog / bibliography / memo edit** → Skip + link check. **Edit to its `CLAUDE.md`** → the two doc↔code tests that parse it (~6 s), not the ten-minute suite. Validated 2026-09-18: the project's own QA section had read "full suite before every commit", so a one-line backlog registration was paying ten minutes for a result that could not change; the section now scopes the suite by what a test can read.
 
 ---
 
@@ -364,8 +365,9 @@ Untested in production: the unified rubric framing itself. Expected to need one 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-05-17 | Initial release. Generalized from two validated project patterns. |
+| 1.1 | 2026-09-19 | Skip tier and step 4: a Markdown file a test parses (doc↔code invariant tests) is part of the test surface — run exactly the tests that read it (`grep -rl <filename> tests/`); Markdown no test reads gets a link check only. Example added. Source: 2026-09-18 incident where a project `CLAUDE.md` demanded the full suite before every commit. |
 
 ---
 
-**Protocol Version:** 1.0
-**Last Updated:** 2026-06-06
+**Protocol Version:** 1.1
+**Last Updated:** 2026-09-19
