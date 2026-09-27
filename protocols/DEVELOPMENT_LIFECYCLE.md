@@ -97,7 +97,7 @@ These apply at (nearly) every phase rather than owning one. Names not included i
 |---|---|
 | `GIT_CONVENTIONS.md` | Commits, branches, PRs — the connective tissue of every phase. |
 | `DEPENDENCY_HYGIENE.md` | Version / package-manager / runtime-pin decisions, mostly at Scaffold and Execute. |
-| `MODEL_EFFORT_SELECTION.md` | Which Claude model + effort tier fits the work; surfaced at phase transitions. |
+| `MODEL_EFFORT_SELECTION.md` | Which Claude model + effort tier fits the work; offered when asked or on a material mismatch. |
 | `CLAUDE_INSTRUCTION_LAYERS.md` | Governs the `CLAUDE.md` / `AGENTS.md` / `NOW.md` / `BACKLOG.md` docs the spine relies on — consult before drafting or editing any of them. |
 | `AGENT_SWARM_RESEARCH.md` | Research-first grounding before a load-bearing design/methodology decision (Execute). |
 | `FILE_NAMING_AND_VERSIONING.md` | Naming/versioning any new file or rename — filenames are permanent identifiers. |
