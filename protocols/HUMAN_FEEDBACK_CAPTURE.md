@@ -6,9 +6,10 @@
 
 **Applies to:** Owner-operated or small-user-base AI apps producing subjective/generative
 output (chat, narration, social posts, long-form drafts) where the operator is a better
-judge than any rubric. Validated on a small-user-base AI chat/drafting app.
-**Last Updated:** 2026-07-20
-**Version:** 1.0
+judge than any rubric. Validated on a small-user-base AI chat/drafting app, and on a solo
+AI content app (receipts, curated improvements and an eval corpus).
+**Last Updated:** 2026-09-27
+**Version:** 1.1
 
 ---
 
@@ -26,10 +27,10 @@ judge than any rubric. Validated on a small-user-base AI chat/drafting app.
 
 ## Overview
 
-[AI_EVALS.md](AI_EVALS.md) covers *automated* regression evals and says of generative
-output: "Generation/chat is harder — come to it later with an LLM-judge." For
-owner-operated apps there is a better first move: **don't approximate the judge you
-already have.** The operator sees every output during real use; a rating affordance at
+[AI_EVALS.md](AI_EVALS.md) covers automated regression evals for bounded output and
+blind comparisons when a generation change is proposed. Between those comparisons,
+owner-operated apps have a better move than an LLM judge: **don't approximate the
+judge you already have.** The operator sees every output during real use; a rating affordance at
 the moment of judgment captures ground truth an LLM judge can only imitate — for the
 cost of a click.
 
@@ -112,11 +113,22 @@ rating, comment, capture provenance). A `freeze-ups` mode makes the 👍 stream 
 default source. Balance rule: **a golden set of only triumphs under-tests** — add a few
 ordinary and hard cases by hand.
 
+A stronger source where the operator edits outputs before use: **promote reviewed
+improvements**. The operator opts in to submit "what the model gave me → what I
+approved", a reviewer confirms the change is a real lesson (not a one-off), and
+promotion freezes the pair as an eval case — the curated target with incidental noise
+removed, learning tags, and the generation's full provenance. Keep corpus membership
+reversible (withdraw/restore with an append-only lifecycle log) without ever mutating
+the frozen pair. No verdict changes a prompt or model automatically.
+
 **7. Human-judged side-by-side replay.** Before any prompt/model/pipeline change, replay
 the goldens through the current config and render baseline-vs-candidate as a plain
 report **for the operator's eyeball** — no LLM judge, no scores. Modes: rebaseline /
 label-vs-baseline / two-live-sides compare. This is the measured gate for prompt edits
-and model swaps.
+and model swaps. When the decision warrants it — a model or provider switch, a contract
+change — run it as a formal blind comparison with frozen manifests and approved spend
+([AI_EVALS.md](AI_EVALS.md) Regime 2). The receipts from primitives 1–2 also let
+deterministic instruments re-score the whole generation history at zero model cost.
 
 ---
 
@@ -224,6 +236,15 @@ Highest-leverage order, and it is not the order teams expect:
 4. **Explicit thumbs and comments last.** The implicit signals above capture most of
    the value without asking the operator to change how they work.
 
+**The retrofit, a month later.** Every item above landed in that app, plus a curation
+path: an immutable receipt per generated option (exact input snapshot, output, prompt
+hash, contract version, deploy SHA, trace id, retrieval provenance); losing options kept,
+with selection and a draft→published edit signal recorded as outcome fields; optional
+ratings with reason codes and a comment; and opt-in improvement submissions with a
+deterministic delta analysis, review-gated and promoted into immutable eval cases. The
+receipts also power a zero-spend fidelity re-score used before and after every
+writer-prompt change.
+
 ---
 
 ## Resources
@@ -240,9 +261,10 @@ Highest-leverage order, and it is not the order teams expect:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1 | 2026-09-27 | Added review-gated promotion of reviewed improvements into an immutable, reversible eval corpus (primitive 6); linked formal blind comparisons and zero-spend receipt re-scoring (primitive 7, [AI_EVALS.md](AI_EVALS.md) 2.0); recorded the retrofit's outcome in the adoption notes. |
 | 1.0 | 2026-07-20 | Initial release. Extracted from a feedback/eval build on a small-user-base AI chat app (three-state ratings, turn-time context + provenance capture, prompt-sha identity, inline comments, golden freeze/replay), plus a retrofit assessment of a second app with mature automated evals. |
 
 ---
 
-**Protocol Version:** 1.0
-**Last Updated:** 2026-07-20
+**Protocol Version:** 1.1
+**Last Updated:** 2026-09-27
