@@ -5,8 +5,8 @@
 > **Lifecycle:** the **Scaffold** phase — see [`DEVELOPMENT_LIFECYCLE.md`](DEVELOPMENT_LIFECYCLE.md) for how this fits with the other workflow protocols.
 
 **Applies to:** All new project repositories
-**Last Updated:** 2026-07-30
-**Version:** 1.11
+**Last Updated:** 2026-09-23
+**Version:** 1.12
 
 ---
 
@@ -90,6 +90,20 @@ git clone git@github.com:OrgName/project-name.git
 ```
 
 See `GITHUB_MULTI_ACCOUNT.md` for SSH alias setup.
+
+#### Where the local clone lives — decide before you clone
+
+GitHub is the source of truth either way; this decides only where the working tree sits on disk.
+
+| Repo | Local clone |
+|---|---|
+| Personal | `~/Projects/<name>` |
+| **Team workspace-operations repo** — backs a shared AI workspace (skills and their distribution, registers, protocols) that colleagues or their agents need to read | Inside the team's cloud-synced shared library (e.g. a SharePoint document library mirrored by OneDrive), beside the sibling operations repos |
+| Other team repo (MCP server, application, service) | `~/Projects/<name>` is fine |
+
+- **Into a synced container: clone there directly.** Never `mv` a live tree into a synced folder. Confirm the container is pinned *Always Keep on This Device*: on macOS, `fileproviderctl evaluate <path>` must list the decoration `com.microsoft.OneDrive.FileProviderBadges.Pinned`. (Not `isKeepDownloaded`, which is Apple's own keep-downloaded flag and reads `0` on a OneDrive-pinned folder.) Then follow `GIT_CONVENTIONS.md` § Cloud-synced working trees.
+- **Record the local path in the register row** (Step 5a) and check it against this table.
+- **A pilot's placement is not precedent.** A disposable pilot may sit in `~/Projects` to keep it out of shared view; the permanent asset that replaces it is placed by this table. A plugin-marketplace repo was once cloned to `~/Projects` by copying its pilot's placement, and had to be moved.
 
 ### Step 2: Secrets & Environment
 
@@ -305,8 +319,10 @@ git remote -v
 # Check gh CLI account
 gh auth status
 
-# If wrong account (common in Claude Code shells):
-unset GH_TOKEN GITHUB_TOKEN
+# If wrong account (common in Claude Code shells): a token environment
+# variable is overriding the gh keyring. `gh auth status` names the variable
+# in use — unset it (e.g. GITHUB_TOKEN), then re-check.
+unset GITHUB_TOKEN
 gh auth status
 ```
 
@@ -432,12 +448,12 @@ Then add `import "dotenv/config";` as the **first line** of your server entry po
 
 ### Problem: Pushed with wrong GitHub account
 
-**Cause:** `GH_TOKEN` env var overriding `gh` keyring auth. See `GITHUB_MULTI_ACCOUNT.md`.
+**Cause:** a token environment variable (e.g. `GITHUB_TOKEN`) overriding `gh` keyring auth; `gh auth status` names the one in use. See `GITHUB_MULTI_ACCOUNT.md`.
 
 **Solution:**
 ```bash
-unset GH_TOKEN GITHUB_TOKEN
-gh auth status  # verify correct account
+unset GITHUB_TOKEN   # or whichever variable `gh auth status` names
+gh auth status      # verify correct account
 ```
 
 ---
@@ -471,9 +487,10 @@ gh auth status  # verify correct account
 | 1.8 | 2026-06-25 | Step 3a expanded from dependency baseline to dependency/tooling baseline: package-manager policy, runtime pins, system/local dependencies, and script safety categories now ride with initial project setup. Cross-linked to DEPENDENCY_HYGIENE.md v1.1. |
 | 1.9 | 2026-06-27 | Added required Step 3d protocol surfacing so new durable repos sync relevant protocols locally and expose exact trigger -> local protocol lines in project instructions. Driven by protocol-invocation drift eval showing generic pointers are weaker than exact local protocol names. |
 | 1.10 | 2026-07-15 | Step 5a: the work/org assets register moved to a shared cloud-drive home; path references updated. Applies only if you keep a separate org register — the personal path is unchanged. Synced copies propagate on each consumer's next commit. |
+| 1.12 | 2026-09-23 | Step 1 gains **Where the local clone lives**: a three-row table (personal → `~/Projects`; team workspace-operations repos → the team's synced shared-library container; other team repos → `~/Projects`), the clone-in-place and pin-verification rules for a synced container (the pin check is OneDrive's `FileProviderBadges.Pinned` decoration — an `isKeepDownloaded` check written the same day was wrong and corrected before use), and *a pilot's placement is not precedent*. |
 | 1.11 | 2026-07-30 | Step 8: corrected the trigger-update warning. "Send the full config to avoid clobbering the nested prompt" read as a risk; the observed behaviour is a **silent success** that drops the trigger's entire prompt *and* resets its tool allowlist to a default preset, leaving a shared auditor firing on schedule with no instructions. Added the verified procedure (read first as your rollback; required fields are validated), a post-update verification (allowlist still the trigger's own short list, not the long preset), and the note to probe update semantics on a disabled far-future throwaway rather than a live trigger. Established empirically while registering a new repo. |
 
 ---
 
-**Protocol Version**: 1.11
-**Last Updated**: 2026-07-30
+**Protocol Version**: 1.12
+**Last Updated**: 2026-09-23
