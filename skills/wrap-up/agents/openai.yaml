@@ -1,0 +1,6 @@
+interface:
+  display_name: "Wrap up"
+  short_description: "Save, verify, ship and hand off the current session"
+  default_prompt: "Use $wrap-up to save this session, verify authorised delivery, recommend the next session’s model and effort, and give me a kickoff prompt."
+policy:
+  allow_implicit_invocation: true

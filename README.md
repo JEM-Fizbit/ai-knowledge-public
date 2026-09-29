@@ -41,8 +41,11 @@ Installable [Agent Skills](https://agentskills.io) — a folder with a `SKILL.md
 | Skill | Covers |
 |---|---|
 | [`public-presence-audit`](skills/public-presence-audit/) | Audit, clean up and maintain your own public footprint: data-broker opt-outs, home addresses on company registries, stale bios, the Google knowledge panel, dormant accounts. Keeps a private register sorted by how much control you have. UK and US playbooks. |
+| [`audit-codebase-architecture`](skills/audit-codebase-architecture/) | A decision-grade audit of a whole existing codebase: reconstructs what was actually built, tests it against the product's intent, and reports findings with evidence and severity. Read-only apart from its report; stops for your correction before the full audit. |
+| [`wrap-up`](skills/wrap-up/) | Closes a working session: writes a dated save point, verifies commits and authorised delivery, recommends the next session's model and effort, and hands you a short kickoff prompt. |
+| [`catch-up`](skills/catch-up/) | The read-only partner to `wrap-up`: a short "where are we" on the current session (done, state, needs you, next) that writes nothing. |
 
-**Install in Claude (web, desktop, mobile, Cowork):** download [`public-presence-audit.skill`](skills/public-presence-audit.skill), then upload it at [claude.ai/settings/skills](https://claude.ai/settings/skills). **Claude Code:** copy the `skills/public-presence-audit/` folder into `~/.claude/skills/`. **Other agents:** point them at `SKILL.md`; it links to the reference files it needs.
+**Install in Claude (web, desktop, mobile, Cowork):** download the skill's `.skill` file from [`skills/`](skills/) (for example [`public-presence-audit.skill`](skills/public-presence-audit.skill)), then upload it at [claude.ai/settings/skills](https://claude.ai/settings/skills). **Claude Code:** copy the skill's folder into `~/.claude/skills/`. **Codex:** `wrap-up` and `catch-up` include `agents/openai.yaml`; copy the folder into `~/.codex/skills/`. **Other agents:** point them at the skill's `SKILL.md`; it links to the reference files it needs.
 
 ## Scope note
 
