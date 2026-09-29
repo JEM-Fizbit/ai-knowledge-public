@@ -1,6 +1,6 @@
 # ai-knowledge-public
 
-A public mirror of selected protocols from a larger private protocol library — reusable practices for AI-assisted software development, written to be read by both humans and coding agents (Claude Code, and similar). Grows over time as more protocols get mirrored out; not limited to one topic.
+A public mirror of selected protocols and skills from a larger private library — reusable practices for AI-assisted software development, written to be read by both humans and coding agents (Claude Code, and similar). Grows over time as more protocols get mirrored out; not limited to one topic.
 
 ## Start here
 
@@ -34,10 +34,20 @@ Standalone technical guides, not tied to the lifecycle spine above.
 |---|---|
 | [`LOCAL_LLM_OLLAMA.md`](protocols/LOCAL_LLM_OLLAMA.md) | Installing, running, and configuring local AI models on Apple Silicon with Ollama |
 
+### Skills
+
+Installable [Agent Skills](https://agentskills.io) — a folder with a `SKILL.md` that an agent loads when a request matches.
+
+| Skill | Covers |
+|---|---|
+| [`public-presence-audit`](skills/public-presence-audit/) | Audit, clean up and maintain your own public footprint: data-broker opt-outs, home addresses on company registries, stale bios, the Google knowledge panel, dormant accounts. Keeps a private register sorted by how much control you have. UK and US playbooks. |
+
+**Install in Claude (web, desktop, mobile, Cowork):** download [`public-presence-audit.skill`](skills/public-presence-audit.skill), then upload it at [claude.ai/settings/skills](https://claude.ai/settings/skills). **Claude Code:** copy the `skills/public-presence-audit/` folder into `~/.claude/skills/`. **Other agents:** point them at `SKILL.md`; it links to the reference files it needs.
+
 ## Scope note
 
 This is a **partial mirror**, not the full private library. A few cross-references inside these files name protocols that aren't included here (shown as plain `code text`, not links) — that's expected. Illustrative examples throughout are drawn from real projects but described generically rather than by name.
 
 ## License
 
-No license file yet — treat as "all rights reserved, provided for reading and adaptation" until one is added.
+[MIT](LICENSE).
