@@ -5,8 +5,8 @@
 > **Lifecycle:** the **Execute** phase (design discipline) — see [`DEVELOPMENT_LIFECYCLE.md`](DEVELOPMENT_LIFECYCLE.md) for how this fits with the other workflow protocols.
 
 **Applies to:** All new code and non-trivial refactors
-**Last Updated:** 2026-06-14
-**Version:** 1.1
+**Last Updated:** 2026-10-03
+**Version:** 1.1.1
 
 ---
 
@@ -270,7 +270,7 @@ An agent that reads one should see a pointer to the other.
 ## Resources
 
 - Related protocols: [`BEST_PRACTICES_FIRST.md`](BEST_PRACTICES_FIRST.md) (when to escalate out of a symptom-fix loop), `GIT_CONVENTIONS.md` (commit message discipline for flagging overrides).
-- Martin Fowler on [Rule of Three](https://martinfowler.com/bliki/RuleOfThree.html) — codifies the "three copies → extract" heuristic under Principle #3.
+- [Rule of three](https://en.wikipedia.org/wiki/Rule_of_three_(computer_programming)) — the "three copies → extract" heuristic under Principle #3, popularised by Martin Fowler's *Refactoring*.
 - [YAGNI](https://martinfowler.com/bliki/Yagni.html) — backs Principle #4 (match spec, don't exceed).
 
 ---
@@ -281,8 +281,9 @@ An agent that reads one should see a pointer to the other.
 |---------|------|---------|
 | 1.0 | 2026-04-24 | Initial release. Five principles (root cause, parameterize, extract, match spec, readability), five anti-patterns, four override triggers, self-check. Cross-links with BEST_PRACTICES_FIRST. |
 | 1.1 | 2026-06-14 | Added Principle #6 (structural invariant over statistical detector — make the bad state unrepresentable, don't watch for it). From a research project's backtesting-leakage work; cross-links LEAKAGE_SAFE_BACKTESTING. |
+| 1.1.1 | 2026-10-03 | Resources: replaced the dead Martin Fowler "Rule of Three" bliki link (404) with the Wikipedia article. No rule change. |
 
 ---
 
-**Protocol Version**: 1.1
-**Last Updated**: 2026-06-14
+**Protocol Version**: 1.1.1
+**Last Updated**: 2026-10-03

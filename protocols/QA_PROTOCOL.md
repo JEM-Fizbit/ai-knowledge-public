@@ -5,8 +5,8 @@
 > **Lifecycle:** the **Verify** phase — see [`DEVELOPMENT_LIFECYCLE.md`](DEVELOPMENT_LIFECYCLE.md) for how this fits with the other workflow protocols.
 
 **Applies to:** Any active development project. Tiered adoption — minimum is a one-line `qa:quick` style command and the tier rubric. Manual checklists, hard gates, and design-QA audit docs are opt-in per project surface area.
-**Last Updated:** 2026-09-19
-**Version:** 1.1
+**Last Updated:** 2026-10-03
+**Version:** 1.1.1
 
 ---
 
@@ -43,7 +43,7 @@ The protocol stacks four verification tiers plus a separate hard-gate lane:
 3. **Full** — Quick + production build + relevant automated tests + manual verification where applicable. Required for changes with cross-cutting blast radius.
 4. **Hard gate** — non-negotiable verification for irreversible, externally-facing, or data-shape operations. Runs *in addition to* the tier check, never instead of.
 
-Hard gates are orthogonal: a change can be tier-Quick *and* hit a hard gate (e.g., a one-line RSS feed add). The tier governs how much general verification you run; the hard gate governs whether a specific risky operation is allowed at all.
+Hard gates are orthogonal: a change can be tier-Skip *and* hit a hard gate (e.g., a one-line RSS feed add). The tier governs how much general verification you run; the hard gate governs whether a specific risky operation is allowed at all.
 
 ### Key benefits
 
@@ -366,8 +366,9 @@ Untested in production: the unified rubric framing itself. Expected to need one 
 |---------|------|---------|
 | 1.0 | 2026-05-17 | Initial release. Generalized from two validated project patterns. |
 | 1.1 | 2026-09-19 | Skip tier and step 4: a Markdown file a test parses (doc↔code invariant tests) is part of the test surface — run exactly the tests that read it (`grep -rl <filename> tests/`); Markdown no test reads gets a link check only. Example added. Source: 2026-09-18 incident where a project `CLAUDE.md` demanded the full suite before every commit. |
+| 1.1.1 | 2026-10-03 | Hard-gates paragraph: the one-line RSS feed example is tier-Skip, not tier-Quick, matching the tier table and worked examples. Wording fix; no rule change. |
 
 ---
 
-**Protocol Version:** 1.1
-**Last Updated:** 2026-09-19
+**Protocol Version:** 1.1.1
+**Last Updated:** 2026-10-03
