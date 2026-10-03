@@ -3,8 +3,8 @@
 > Your complete guide to installing, running, and configuring local AI models on Apple Silicon Macs using Ollama — from first install to API endpoints and custom model configurations.
 
 **Applies to:** macOS, Apple Silicon (M1–M5), Ollama, local AI inference
-**Last updated:** 2026-04-06
-**Version:** 2.1
+**Last updated:** 2026-10-03
+**Version:** 2.1.1
 
 ---
 
@@ -144,7 +144,7 @@ Models come in different sizes, measured in **parameters** (e.g., 8B = 8 billion
 | Qwen 3 8B | `ollama run qwen3:8b` | ~5GB | General purpose — lighter alternative if RAM is tight |
 | Gemma 4 E4B 📷 | `ollama run gemma4:e4b` | ~10GB | General purpose + image understanding |
 | Gemma 4 E2B 📷 | `ollama run gemma4:e2b` | ~7GB | Lightweight multimodal (images + audio) |
-| Llama 3.3 8B | `ollama run llama3.3:8b` | ~5GB | All-rounder |
+| Llama 3.1 8B | `ollama run llama3.1:8b` | ~5GB | All-rounder |
 | Mistral 7B | `ollama run mistral` | ~5GB | Fast responses |
 
 ### 24GB RAM
@@ -720,6 +720,7 @@ As of late March 2026, Ollama 0.19 introduced a preview of native MLX support �
 | 1.0 | 2026-04-06 | Initial release |
 | 2.0 | 2026-04-06 | Major rewrite: beginner-focused structure, API documentation, persistent server setup, expanded Modelfiles section, accuracy corrections |
 | 2.1 | 2026-04-07 | Added Gemma 4 models (E2B, E4B, 26B MoE, 31B Dense) and Qwen 3.5 (9B, 27B) to all RAM tiers; Qwen 3.5 9B replaces Qwen 3 8B as default recommendation; MoE explainer, multimodal notes |
+| 2.1.1 | 2026-10-03 | 16GB tier: `llama3.3:8b` does not exist (Llama 3.3 ships only as 70B); replaced with `llama3.1:8b`, checked against ollama.com/library. |
 
 ---
 
