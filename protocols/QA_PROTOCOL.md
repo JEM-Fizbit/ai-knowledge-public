@@ -5,8 +5,8 @@
 > **Lifecycle:** the **Verify** phase — see [`DEVELOPMENT_LIFECYCLE.md`](DEVELOPMENT_LIFECYCLE.md) for how this fits with the other workflow protocols.
 
 **Applies to:** Any active development project. Tiered adoption — minimum is a one-line `qa:quick` style command and the tier rubric. Manual checklists, hard gates, and design-QA audit docs are opt-in per project surface area.
-**Last Updated:** 2026-10-03
-**Version:** 1.1.1
+**Last Updated:** 2026-10-05
+**Version:** 1.1.2
 
 ---
 
@@ -36,7 +36,7 @@ This protocol fixes that by **separating the question of *whether* to verify fro
 
 > **Core principle:** QA depth scales with task surface, not with frequency. A typo fix doesn't need a full build; a schema migration doesn't ship on lint alone; an irreversible data operation doesn't ship without a hard-gate check regardless of code size.
 
-The protocol stacks four verification tiers plus a separate hard-gate lane:
+The protocol stacks three verification tiers plus a separate hard-gate lane:
 
 1. **Skip** — no QA check required. Reserved for non-code or trivially isolated edits.
 2. **Quick** — fast static checks (lint, typecheck). The most common tier for everyday code edits.
@@ -367,8 +367,9 @@ Untested in production: the unified rubric framing itself. Expected to need one 
 | 1.0 | 2026-05-17 | Initial release. Generalized from two validated project patterns. |
 | 1.1 | 2026-09-19 | Skip tier and step 4: a Markdown file a test parses (doc↔code invariant tests) is part of the test surface — run exactly the tests that read it (`grep -rl <filename> tests/`); Markdown no test reads gets a link check only. Example added. Source: 2026-09-18 incident where a project `CLAUDE.md` demanded the full suite before every commit. |
 | 1.1.1 | 2026-10-03 | Hard-gates paragraph: the one-line RSS feed example is tier-Skip, not tier-Quick, matching the tier table and worked examples. Wording fix; no rule change. |
+| 1.1.2 | 2026-10-05 | Overview: "four verification tiers plus a separate hard-gate lane" corrected to three (Skip, Quick, Full); the hard gate is the fourth list item, not a fourth tier. Wording fix; no rule change. |
 
 ---
 
-**Protocol Version:** 1.1.1
-**Last Updated:** 2026-10-03
+**Protocol Version:** 1.1.2
+**Last Updated:** 2026-10-05
