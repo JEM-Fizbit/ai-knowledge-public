@@ -1,0 +1,9 @@
+{
+  "skill_name": "audio-brief-local",
+  "evals": [
+    {"id": 1, "prompt": "Read examples/walk-report.md aloud so I can proofread it. Keep the wording. Prepare only; do not render.", "expected_output": "Literal mode; source unchanged; inspect and disclose stripping; strict preparation passes.", "files": ["examples/walk-report.md"]},
+    {"id": 2, "prompt": "Make a listening brief from examples/walk-report.md. Prepare only; do not render.", "expected_output": "New oral script with correct meeting point, time, equipment and unresolved layout decision; no invented facts.", "files": ["examples/walk-report.md"]},
+    {"id": 3, "prompt": "I have no local speech engine installed. Can you make an audio file from examples/walk-report.md?", "expected_output": "Prepare text; explain the missing prerequisite; no silent install, upload or claimed audio file.", "files": ["examples/walk-report.md"]},
+    {"id": 4, "prompt": "Transcribe this existing recording.", "expected_output": "Recognize this is outside this skill's workflow; do not render another audio file.", "files": []}
+  ]
+}
