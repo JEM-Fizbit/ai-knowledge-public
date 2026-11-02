@@ -5,8 +5,8 @@
 > **Lifecycle:** extends the **Verify** phase for AI-powered projects — see [`DEVELOPMENT_LIFECYCLE.md`](DEVELOPMENT_LIFECYCLE.md) for how this fits with the other workflow protocols.
 
 **Applies to:** Any AI-powered project whose non-deterministic LLM output matters (scoring, classification, extraction, ranking, generation). Tiered — minimum is one golden set + one `eval:*` command; comparative evals are added when a generation path's prompt, model or effort is deliberately changed.
-**Last Updated:** 2026-09-27
-**Version:** 2.0
+**Last Updated:** 2026-11-02
+**Version:** 2.1
 
 ---
 
@@ -72,11 +72,11 @@ Validated on a solo AI content app's regression evals: signal scoring, enrichmen
 
 **1. Golden set from production, regenerable.** A committed `evals/<target>/golden.json` of real inputs, stratified across outcome buckets (off / low / mid / high) and every relevant config (theme, persona, channel). Build it with a committed extractor script (`build-golden.ts`) so it can be regenerated as data evolves. ~50–100 cases is plenty for v1. Add a few synthetic cases for failure shapes production rarely shows (navigation junk, paywalls, error pages).
 
-**2. Anchor honestly.** The cheapest v1 anchors each case to the *current production score* — that makes it a **regression/drift anchor** (catches change), not human ground truth (a quality bar). State which it is. Upgrade by hand-curating a ground-truth subset, especially boundary cases, later. A deliberate prompt or model change is a **baseline reset**, not a regression to chase with a looser gate.
+**2. Anchor honestly.** The cheapest v1 anchors each case to the *current production score* — that makes it a **regression/drift anchor** (catches change), not human ground truth (a quality bar). State which it is. Upgrade by hand-curating a ground-truth subset, especially boundary cases, later. A stronger model's scores make a better anchor than the incumbent's own, but that anchor is still a judge: validate it against human labels ([LLM judges](#llm-judges)) before reading agreement with it as quality. A deliberate prompt or model change is a **baseline reset**, not a regression to chase with a looser gate.
 
 **3. Hit the real production path and configuration.** Extract a pure function (prompt-build → model call → parse) with no DB/side-effects, and have the production code and the eval both call it. Import the production model/provider constants rather than restating them, and fail loudly if the harness would run a different provider. A harness that defaults to a retired model or "the engine default" measures fiction as surely as a copied prompt — One app found three of its draft harnesses doing exactly that after a model switch.
 
-**4. Runner with a gate and a noise floor.** `evals/<target>/run.ts` replays the golden set, computes metrics (mean abs error vs anchor, within-tolerance rate, boundary-classification agreement, output-format validity), writes a timestamped **scorecard**, diffs against the previous PASS, and **exits non-zero on regression**. Update `latest.json` (the baseline) *only on PASS* so a failing run is always compared to the last known-good. Gates use tolerances, not exact equality — even `temperature: 0` varies run-to-run — and thresholds are set from the observed baseline, never a priori. Run repeats (3 is a practical default), report the run-to-run spread, and label any delta inside it **WITHIN NOISE** rather than as a finding.
+**4. Runner with a gate and a noise floor.** `evals/<target>/run.ts` replays the golden set, computes metrics (mean abs error vs anchor, within-tolerance rate, boundary-classification agreement, output-format validity), writes a timestamped **scorecard**, diffs against the previous PASS, and **exits non-zero on regression**. Update `latest.json` (the baseline) *only on PASS* so a failing run is always compared to the last known-good. Gates use tolerances, not exact equality — even `temperature: 0` varies run-to-run — and thresholds are set from the observed baseline, never a priori. Run repeats (3 is a practical default), report the run-to-run spread, and label any delta inside it **WITHIN NOISE** rather than as a finding. That spread only says whether output on these cases moved; a claim that the scorer got better or worse needs the paired per-case band ([Noise and sample size](#noise-and-sample-size)), printed beside it.
 
 **5. Fast deterministic unit layer.** The fragile pure logic (JSON extraction, clamping, junk detection) and the eval's own instruments get ordinary unit tests (`pnpm test`) — no API, no cost, runs on every change. Pin live specimens of instrument behaviour here (a real output a detector must flag, one it must pass), so the instrument itself is regression-tested in CI. Keep this separate from the live eval (`pnpm eval:*`), which costs money and is mildly non-deterministic.
 
@@ -140,7 +140,9 @@ Store an immutable receipt for every production generation: the exact model inpu
 ### Noise and sample size
 
 - **Measure the noise floor before claiming an effect** — repeats, or a control arm. In one app, identical runs swung ±0.15 on the very metric being optimised, and a no-change arm exposed a 24.7% noise floor.
-- **Budget replicates to the effect size** — about four per condition per seed for small effects — or don't run it.
+- **Two sources of noise, two bands.** Repeats measure *run luck*: whether output on these cases moved. A claim that B beats A also carries *case luck*, because a different set of cases would give a different mean. For that claim, take each case's difference (B − A, each averaged over its repeats) and use **1.96 × SD(differences) ÷ √n** as the 95% band. Each case is compared with itself, so its difficulty cancels, and the band works from a single run per arm. Keep the run-noise floor for drift on a fixed set; judge every comparison claim against the paired band. (In one app, the run-noise floor had called 3 of 4 weekly deltas real, the paired band none, and three past model or rubric comparisons fell inside it.)
+- **Budget the sample to the effect size, or don't run it.** Case luck usually dominates, so more cases narrow the paired band (4× the cases halves it) where more repeats barely do. A 54-case scoring set cannot separate scorers closer than about 0.03 MAE or 9 points of keep/drop agreement. Generation comparisons with few cases per arm still need replicates, about four per condition per seed for small effects.
+- **Read per-case consistency, not just the average.** Sort cases by what the repeats did: always right, sometimes right, never right. The flaky cases' runs show where things go wrong; an always-wrong case is either beyond the system or a faulty case. An average change can hide a few cases that flipped completely.
 - **Don't design from n=1.** Say "limited evidence" when that is what one or two wins are.
 - **Separate content gains from length gains.** Length confounds most quality judgments; hold it fixed or measure it separately.
 
@@ -148,6 +150,8 @@ Store an immutable receipt for every production generation: the exact model inpu
 
 - **Pairwise over pointwise** for subjective criteria; judge **both orders** and exclude pairs whose two verdicts disagree rather than coin-flipping them.
 - **Validate before use.** The headline number is agreement with the owner's blind calls on the same pairs, not the judge's opinion of the outputs. A judge at chance per pair may still show aggregate direction, but it is not a per-pair proxy for the owner. (In one validation, a Sonnet judge was position-inconsistent on 8 of 9 pairs and was disqualified; an Opus judge's apparent 5/5 fell to 5/8 — chance — once given a channel-matched reference.)
+- **Agreement between judges is reliability, not validity.** Two judges, or a judge and a stronger model, can agree closely and both be wrong: on 144 security patches two LLM judges agreed at κ 0.75 with each other but at κ ≤ 0.26 with the executed tests ([Deininger & Slany, 2026](https://www.mdpi.com/2624-800X/6/5/153)). Validate every judge — including a stronger-model reference used as a Regime 1 anchor — against human labels or executed tests on the work it actually grades. Where tests exist, they decide correctness; the judge gets only what no test covers.
+- **Report judge agreement as Cohen's kappa with its confidence interval, and errors as two counts.** A false pass ships bad work and a false fail sends good work back, so they cost different things and are never netted. Label more cases than feels necessary: at 144 items, a κ of 0.26 spanned 0.14–0.42.
 - **Keep references leak-free** — nothing that is itself a candidate elsewhere.
 - **Absolute rubric judges need forced discrimination** — see the ceiling-effect anti-pattern below.
 
@@ -255,7 +259,8 @@ Source: an AI signal-scoring pilot's (pharma domain) rubric-judge work — the n
 ```
 ❌ Bad — one paid run per condition, a 0.1 delta, "the new prompt reduces copying".
 ✅ Good — measure run-to-run spread (repeats or a control arm) first; label deltas
-   inside it WITHIN NOISE; replicate to the effect size or don't run it.
+   inside it WITHIN NOISE; judge any "B beats A" claim against the paired per-case
+   band; size the case set to the effect or don't run it.
 ```
 
 ### Unblinding before the verdicts are frozen
@@ -317,6 +322,7 @@ Source: an AI signal-scoring pilot's (pharma domain) rubric-judge work — the n
 - `ANTHROPIC_MODEL_REFERENCE.md` — choosing the model for the eval path and the arms of a bake-off
 - `AUDIT_ROUTINE_STANDARD.md` / `SLACK_OPS_NOTIFICATION.md` — the weekly digest delivery
 - [PROJECT_INITIATION.md](PROJECT_INITIATION.md) — where the "this project needs evals" decision is made
+- [How to Build an Agent Eval You Can Trust](https://theaiengineer.substack.com/p/how-to-build-an-agent-eval-you-can) (Paolo Perrone, The AI Engineer, 2026-10-30) — source of the paired band and judge-validation additions in 2.1. Also covers end-to-end coding-agent evals (sealed runs, held-out tests, trace checks, at least five runs per task); start there when evaluating an agent end to end
 
 ---
 
@@ -324,6 +330,7 @@ Source: an AI signal-scoring pilot's (pharma domain) rubric-judge work — the n
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.1 | 2026-11-02 | Noise and sample size: separate run luck (repeat spread; drift on a fixed set) from case luck, and judge comparison claims against the paired per-case band (1.96 × SD of per-case differences ÷ √n); size the case set, not the repeats, to the effect; read per-case consistency. LLM judges: agreement between judges, or with a stronger model, is reliability, not validity — validate every judge, Regime 1 reference anchors included, against human labels or executed tests; report kappa with its interval and false passes and false fails separately. Regime 1 steps 2 and 4 and the noise anti-pattern point at both. From a solo AI content app's re-analysis of its scoring eval and the Perrone article in Resources. |
 | 2.0 | 2026-09-27 | Restructured around two regimes. Regime 1 (bounded output) keeps the golden-set pattern and adds production-config imports, noise floors, baseline resets and README-recorded baselines. New Regime 2 (subjective generation): one-factor comparisons with frozen evidence, free preflight and cost forecast, owner-approved manifest + cap, safe run mechanics, blind review, freeze-then-decode, hold-or-promote with a recorded rollback, calibrated assistant first pass, generalisation guards. New shared foundations: generation receipts for zero-spend re-scoring, instrument honesty, noise and sample size, validated pairwise judges, guardrail independence, spend control. Operating model adds approval-gated runs and digest production signals. Seven new anti-patterns. Fixed the header, which still read 1.4. From a solo AI content app's Aug–Sep 2026 post-writer evaluations. |
 | 1.5 | 2026-09-04 | Added the hosted-prompt-to-code migration row: the gate is a golden payload fixture test (request faithfulness), not a golden set (output quality). |
 | 1.4 | 2026-07-20 | Cross-linked [HUMAN_FEEDBACK_CAPTURE.md](HUMAN_FEEDBACK_CAPTURE.md) as the first move for subjective/generative output on owner-operated apps; LLM-judge repositioned as the volume-outgrows-operator escalation. |
@@ -334,5 +341,5 @@ Source: an AI signal-scoring pilot's (pharma domain) rubric-judge work — the n
 
 ---
 
-**Protocol Version:** 2.0
-**Last Updated:** 2026-09-27
+**Protocol Version:** 2.1
+**Last Updated:** 2026-11-02
