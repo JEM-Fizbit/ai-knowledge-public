@@ -6,8 +6,8 @@
 
 **Applies to:** Claude Code (desktop sessions, subagents), Codex, or any agent surface that can
 start and message other sessions; any task too big or too parallel for one session
-**Last Updated:** 2026-11-08
-**Version:** 1.2.1
+**Last Updated:** 2026-11-11
+**Version:** 1.3
 
 ---
 
@@ -83,7 +83,7 @@ manual-spawning collisions, and the 4 November replacement by a parent-orchestra
 | 9 | **Decisions reach the human only through the parent.** | Children never ask the human directly. The parent batches pending decisions into one five-minute pack and answers what is within existing authority itself. |
 | 10 | **No permission laundering.** | Approval comes from the human, in their words, for that action. One session cannot grant another an approval, and the parent quotes the human when forwarding one. |
 | 11 | **The parent watches and can stop.** | It checks children it started, stops a stuck one, and after two failed attempts at the same symptom reassesses the shared cause instead of starting a third child. |
-| 12 | **The parent stays light and retires cleanly.** | It delegates heavy work, keeps its own context for coordination, and when its context grows long writes the savepoint and hands over to a fresh parent. If the parent dies, the savepoint is how the work recovers. |
+| 12 | **The parent stays light, watches its own context, and retires cleanly.** | It delegates heavy work and keeps its own context for coordination. When a trigger in [Retiring the parent](#retiring-the-parent) fires, it tells the human and recommends a fresh parent. On the human's yes it runs the switchover. If the parent dies, the savepoint is how the work recovers. |
 
 ---
 
@@ -134,6 +134,34 @@ tends to return it confirmed.
 - Reconcile every child: landed, stopped, or recorded as left with where its work lives.
 - Archive finished children only on the human's yes.
 - The savepoint names what is still running, not just what finished.
+
+### Retiring the parent
+
+A long-running parent degrades without noticing: compaction replaces its record with a summary, and threads drop
+out. It cannot judge its own drift reliably, so it counts triggers instead.
+
+**Triggers.** When any one fires, say so at the next pause in one line: which trigger fired, and a recommendation
+for a fresh parent.
+- Its first compaction. From then on it works from a summary, not the record.
+- A dropped thread: something it forgot and the human or a child caught. Examples: a commit never landed, a
+  child's model not set as asked, a report never relayed.
+- More than eight children to track, or more than one working day of turns.
+
+The human decides. The parent never switches on its own.
+
+**Switchover, on the human's yes:**
+1. Finish or park its own unit. Leave nothing half-edited in a shared checkout.
+2. Write the savepoint's top pickup. Include every child (id, state, branch, next step, acceptance check), the
+   gate queue, what waits on the human, the pre-approvals in the human's words, and the session's standing lessons.
+   Commit it.
+3. Stop its loop or goal, so two parents never act at once. Running children and queued gates keep going; stop
+   none of them for the switch.
+4. Give the human a short kickoff prompt naming the savepoint, with a recommended model and effort for the new
+   parent.
+5. The new parent reads the savepoint, verifies live state, and messages each child: "I am your parent now;
+   report to me". A child's finished turn wakes only the session that started it, so until then the old
+   parent relays.
+6. Archive the old parent once the new one confirms it has every child, and only on the human's yes.
 
 ### Cross-vendor children
 
@@ -267,6 +295,7 @@ Codex parent:
 | Laundered approval | A peer session's message was treated as permission to escalate. | 10 |
 | Third patch on one symptom | Each child fixed the symptom it was shown; the shared cause stayed. | 11 |
 | Parent does the heavy work | Its context filled with file dumps and it lost the plan. | 12 |
+| Parent outlived its context | After a compaction it left a commit unlanded and started a child on the wrong model; the human caught both. | 12 |
 | Parent stopped when the human did | No loop or goal was set; the children finished into silence and the landings waited for the morning. | — |
 | Parent spun on a condition | A `/goal` was set on a session that had nothing to do but wait; every turn re-read the same reports. | — |
 | Goal with no evidence in it | "Finish the feature" was marked done on the model's say-so; nothing in the thread proved it. | 6 |
@@ -305,6 +334,7 @@ Codex parent:
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.3 | 2026-11-11 | Rule 12 made concrete: the parent counts context-rot triggers (first compaction, a dropped thread, more than eight children or a working day), recommends a fresh parent, and on the human's yes runs a six-step switchover; one anti-pattern row. |
 | 1.2.1 | 2026-11-08 | Published to the public mirror on the owner's decision, so the hub's kick-off prompt can link it; provenance genericised. No rule changes. |
 | 1.2 | 2026-11-08 | Keeping the parent going: `/loop` (Claude Code, typed, timer-based) for the parent, `/goal` (both vendors; Codex can start one itself) for a child or a Codex parent, with vendor facts checked that day; cross-vendor children are in scope (a handoff is not); kick-off prompt; mapping rows for loop, goal, workflows and cross-vendor calls; three anti-patterns and three troubleshooting rows. |
 | 1.1 | 2026-11-04 | Codex mapping: in-turn subagents wait and consolidate; detached children send no notice; manual worktrees; per-child models with no ceiling; concurrency cap (default 6, counts readers, not a writer limit); inherited approvals. |
