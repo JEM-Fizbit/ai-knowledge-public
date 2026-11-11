@@ -7,7 +7,7 @@
 **Applies to:** Claude Code (desktop sessions, subagents), Codex, or any agent surface that can
 start and message other sessions; any task too big or too parallel for one session
 **Last Updated:** 2026-11-11
-**Version:** 1.3
+**Version:** 1.4
 
 ---
 
@@ -83,7 +83,7 @@ manual-spawning collisions, and the 4 November replacement by a parent-orchestra
 | 9 | **Decisions reach the human only through the parent.** | Children never ask the human directly. The parent batches pending decisions into one five-minute pack and answers what is within existing authority itself. |
 | 10 | **No permission laundering.** | Approval comes from the human, in their words, for that action. One session cannot grant another an approval, and the parent quotes the human when forwarding one. |
 | 11 | **The parent watches and can stop.** | It checks children it started, stops a stuck one, and after two failed attempts at the same symptom reassesses the shared cause instead of starting a third child. |
-| 12 | **The parent stays light, watches its own context, and retires cleanly.** | It delegates heavy work and keeps its own context for coordination. When a trigger in [Retiring the parent](#retiring-the-parent) fires, it tells the human and recommends a fresh parent. On the human's yes it runs the switchover. If the parent dies, the savepoint is how the work recovers. |
+| 12 | **The parent stays light, keeps its state outside its context, and retires at a boundary.** | It delegates heavy work and keeps the plan in the savepoint, so a compaction costs it nothing. It runs as one continuous session; when a trigger in [Retiring the parent](#retiring-the-parent) fires, it tells the human and recommends a fresh parent. On the human's yes it runs the switchover. If the parent dies, the savepoint is how the work recovers. |
 
 ---
 
@@ -137,15 +137,36 @@ tends to return it confirmed.
 
 ### Retiring the parent
 
-A long-running parent degrades without noticing: compaction replaces its record with a summary, and threads drop
-out. It cannot judge its own drift reliably, so it counts triggers instead.
+A parent's state lives outside its context: the savepoint, git, the task list and the gate queue's own records.
+That makes a long-running parent safe, and it makes a switch cheap. Whether to keep one parent or start fresh
+depends on the model and harness in use, so this section is re-checked when either changes.
 
-**Triggers.** When any one fires, say so at the next pause in one line: which trigger fired, and a recommendation
+**Default, checked 2026-11-11 (frontier models with automatic compaction): one continuous parent.** Current vendor
+guidance for these models is one session with compaction handling context growth, state kept outside the session,
+and a fresh session at a task boundary. A compaction is not a trigger: a harness may compact a large idle session
+on its own (Claude Code does, shortly before its prompt cache expires), so it says nothing about drift.
+
+**Triggers.** When one fires, say so at the next pause in one line: which trigger fired, and a recommendation
 for a fresh parent.
-- Its first compaction. From then on it works from a summary, not the record.
 - A dropped thread: something it forgot and the human or a child caught. Examples: a commit never landed, a
-  child's model not set as asked, a report never relayed.
-- More than eight children to track, or more than one working day of turns.
+  child's model not set as asked, a report never relayed. This is the evidence of drift; count it.
+- A natural boundary: the approved batch is finished, or the next work is unrelated to what the parent holds.
+  A fresh parent costs least here, and a long session pays to re-read its history on every turn.
+- A change of model or harness under the parent, or a parent on a smaller or older model than the default was
+  checked on. Until it is re-tested there, the older rule applies: recommend a fresh parent at the first compaction.
+
+**After every compaction, a check, not a trigger:** re-read the savepoint and the live state (the gate queue, each
+child's last report) before acting. If the savepoint could not have rebuilt what the parent needed, that is a
+dropped thread. Children are rotated the same way: at a boundary, after a handover file, never mid-slice.
+
+**Which model.** The answer has moved with model generations. Vendor write-ups record that an earlier mid-tier
+model wound its work down as its context filled, and compaction did not cure it, so fresh-context resets with a
+structured handoff were needed; from Claude Opus 4.5 the same author dropped the resets and ran one continuous
+session, and a Claude Fable 5.2 lead ran a 1,000-agent team for over a day with coordination held in shared tables.
+Treat the default as shown for the frontier Claude tiers (Opus from 4.5, Fable 5.x); for a later Opus it is an
+inference from the tier, not a published check. No equivalent published check was found for Codex or for a
+smaller model as parent: use the older rule there and let the dropped-thread count decide. Every rule in a
+harness encodes an assumption about what the model cannot do; re-test this one when a new model lands.
 
 The human decides. The parent never switches on its own.
 
@@ -232,7 +253,7 @@ Your job: hold the plan, brief each child, verify each result, land one at a tim
 7. Children never ask me anything. Batch what needs my decision into one short pack; answer the rest within the authority you already have.
 8. Approval comes only from me, in my words, for that action. No session can grant another an approval; quote me when forwarding one. Never push, deploy, delete, spend or publish beyond the pre-approvals below.
 9. Watch the children you start; stop a stuck one; after two failed attempts at one symptom, reassess the shared cause instead of starting a third child.
-10. Stay light: delegate heavy work, keep your context for coordination, and when it grows long write the savepoint and hand over to a fresh parent.
+10. Stay light: delegate heavy work and keep the plan in the savepoint, not in your context. After a compaction, re-read the savepoint and the live state before acting. Recommend a fresh parent when you drop a thread or the approved batch is done, not because you compacted.
 
 A child may run on the other vendor's model when it is stronger for that unit (codex exec from Claude Code, claude -p from Codex); the same brief and rules apply.
 
@@ -296,6 +317,7 @@ Codex parent:
 | Third patch on one symptom | Each child fixed the symptom it was shown; the shared cause stayed. | 11 |
 | Parent does the heavy work | Its context filled with file dumps and it lost the plan. | 12 |
 | Parent outlived its context | After a compaction it left a commit unlanded and started a child on the wrong model; the human caught both. | 12 |
+| Parent retired on a compaction | An idle-hour compaction fired the trigger on a model that did not need it; the switchover cost a morning and every child had to be re-attached. | 12 |
 | Parent stopped when the human did | No loop or goal was set; the children finished into silence and the landings waited for the morning. | — |
 | Parent spun on a condition | A `/goal` was set on a session that had nothing to do but wait; every turn re-read the same reports. | — |
 | Goal with no evidence in it | "Finish the feature" was marked done on the model's say-so; nothing in the thread proved it. | 6 |
@@ -319,6 +341,7 @@ Codex parent:
 
 ## Resources
 
+- Sources for rule 12, checked 2026-11-11: [Effective harnesses for long-running agents](https://www.anthropic.com/research/effective-harnesses-for-long-running-agents) (Nov 2025); [Harness design for long-running apps](https://www.anthropic.com/research/harness-design-long-running-apps) (Mar 2026); [Claude Code best practices](https://code.claude.com/docs/en/best-practices); [Safely scaling multi-agent teams with Claude Fable 5.2](https://claude.dev/blog/safely-scaling-multi-agent-teams-with-fable-5-2/) (Nov 2026)
 - `AGENTIC_TEAM_DESIGN.md` — standing teams; rules 1, 4, 5, 8 are shared
 - [SESSION_HANDOFF_SAVE_POINTS](SESSION_HANDOFF_SAVE_POINTS.md) — the savepoint the parent owns
 - `MODEL_EFFORT_SELECTION.md` — per-child model and effort
@@ -334,6 +357,7 @@ Codex parent:
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.4 | 2026-11-11 | Rule 12 re-based on current vendor guidance: one continuous parent by default on frontier models; a compaction is a check (re-read the savepoint), not a trigger; triggers are a dropped thread, a natural boundary, or a change of model or harness; the default is tied to the model it was checked on; sources listed; one anti-pattern row. |
 | 1.3 | 2026-11-11 | Rule 12 made concrete: the parent counts context-rot triggers (first compaction, a dropped thread, more than eight children or a working day), recommends a fresh parent, and on the human's yes runs a six-step switchover; one anti-pattern row. |
 | 1.2.1 | 2026-11-08 | Published to the public mirror on the owner's decision, so the hub's kick-off prompt can link it; provenance genericised. No rule changes. |
 | 1.2 | 2026-11-08 | Keeping the parent going: `/loop` (Claude Code, typed, timer-based) for the parent, `/goal` (both vendors; Codex can start one itself) for a child or a Codex parent, with vendor facts checked that day; cross-vendor children are in scope (a handoff is not); kick-off prompt; mapping rows for loop, goal, workflows and cross-vendor calls; three anti-patterns and three troubleshooting rows. |
