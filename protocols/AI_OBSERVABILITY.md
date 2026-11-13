@@ -5,8 +5,8 @@
 > **Lifecycle:** the **Operate** dimension (post-ship, runtime) for AI-powered projects — see [`DEVELOPMENT_LIFECYCLE.md`](DEVELOPMENT_LIFECYCLE.md) for how this fits with the other workflow protocols.
 
 **Applies to:** Any production AI app making LLM calls. Tiered — minimum is per-call latency + outcome + a traceId captured to your own datastore.
-**Last Updated:** 2026-07-05
-**Version:** 1.1
+**Last Updated:** 2026-11-13
+**Version:** 1.3
 
 ---
 
@@ -67,7 +67,9 @@ const response = await traced(
 
 **4. Capture errors, not just successes.** A success-only cost log hides exactly the calls you most need to see. Error rows carry the outcome + message + duration with zero tokens / null cost.
 
-**5. Defer prompt/response capture.** Logging full prompts/responses has PII and size cost — leave it out of v1 unless a concrete debugging need justifies it, and gate it behind a flag when added.
+**5. Separate telemetry from recovery custody.** Logging full prompts/responses into observability has PII and size cost; do not duplicate them into general logs by default. Paid-result recovery uses a private authoritative receipt store under [Durable progress and paid-result custody](SOLUTION_DESIGN_PRINCIPLES.md#7-durable-progress-and-paid-result-custody), with explicit source/access/retention rules. Best-effort telemetry failure may not interrupt work; failure to establish required custody/admission must stop new paid work. These are different boundaries.
+
+An error metric with zero recorded tokens and null cost means usage was not observed; it does not prove the provider charged zero. Mark that uncertainty and reconcile it against authoritative usage/receipts. Tag replayed saved results separately from new provider submissions so trace totals cannot be mistaken for billed spend. Telemetry is not the attempt/allowance ledger.
 
 ---
 
@@ -142,10 +144,11 @@ Capture is continuous and automatic; the question is how the operator *sees* it 
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.3 | 2026-11-13 | Curated recovery-custody amendment from upstream 1.3 (`fca312e`; source SHA-256 `785db8b12ee2dbeb`); distinguish unknown billing and replay. Existing notification routing is retained; this is not a full upstream refresh. |
 | 1.1 | 2026-07-05 | Updated the validation link to the archived shipped spec path. |
 | 1.0 | 2026-06-06 | Initial release. Extracted from a solo AI content app's observability pilot: traced() wrapper, traceId correlation, in-stack metadata-first capture (no migration), error-row capture, weekly-digest operating model. |
 
 ---
 
-**Protocol Version:** 1.1
-**Last Updated:** 2026-07-05
+**Protocol Version:** 1.3
+**Last Updated:** 2026-11-13

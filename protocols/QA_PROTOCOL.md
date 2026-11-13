@@ -5,8 +5,8 @@
 > **Lifecycle:** the **Verify** phase — see [`DEVELOPMENT_LIFECYCLE.md`](DEVELOPMENT_LIFECYCLE.md) for how this fits with the other workflow protocols.
 
 **Applies to:** Any active development project. Tiered adoption — minimum is a one-line `qa:quick` style command and the tier rubric. Manual checklists, hard gates, and design-QA audit docs are opt-in per project surface area.
-**Last Updated:** 2026-10-05
-**Version:** 1.1.2
+**Last Updated:** 2026-11-13
+**Version:** 1.4.0
 
 ---
 
@@ -145,6 +145,27 @@ A change qualifies for a hard gate when:
 
 - **RSS feed hard gate** — mandatory `curl` probe + HTTP 200 + XML/RSS/Atom content type + verified item presence before any feed is added. Source: `RSS_FEED_INGESTION.md`.
 - **Universal: never delete data as a fix** — Hard-gate framing makes it explicit: any change that deletes user data requires explicit user approval citing the data class and recovery path.
+
+### Recovery and publication gate
+
+**Trigger:** a change to durable ingestion progress, paid/consequential step recovery, authoritative publication or its rollback. The affected workflow must identify its durability/admission boundaries and use the relevant cases below. This is a targeted gate, not a requirement to rerun unrelated broad suites or buy a new provider demonstration.
+
+| Fault boundary | Required outcome / failure signal |
+|---|---|
+| Item write fails, then input is unchanged/304 | All accepted items remain durable or pending replay; no cursor/hash skips missing data. |
+| Refresh/validation/attestation fails | Last-good content and provenance remain usable under current access rules; no empty or unvalidated replacement becomes current. |
+| Before dispatch / accepted dispatch without acknowledgement | Durable admission precedes submission; uncertain acceptance stays held, with no blind resend. |
+| After a received response is durable / a sibling later fails | A fresh process reuses the exact saved response; completed provider-call count does not increase. Invalid output is retained and classified; permitted corrections keep their existing ordinal/allowance. |
+| Before publication / publication commits but acknowledgement is lost | Publish once under the current input/owner; reconcile authoritative state without regenerating completed work. |
+| Concurrent worker / stale owner | Atomic ownership and fencing prevent duplicate dispatch or stale publication; expiry alone does not release an uncertain dispatch. |
+| Actual replacement worker / recovery-aware rollback | State survives without the original workspace; rollback retains saved-work readers and unresolved holds. |
+| Deadline / allowance exhaustion / missing scheduled start | Fake time proves bounded dispatch, visible truthful escalation and independently detected absence; alert acknowledgement grants no new paid work. |
+
+**Verification command:** the project names the smallest executable fault/replacement fixture for its affected boundaries and its non-vacuous failure signals (for example, a repeated fake-provider call, changed output bytes, missing retained row or stale-owner write). Use fake providers and disposable stores by default. A hosted/paid acceptance envelope also accounts for automatically triggered builds, checks, jobs and retry layers caused by its push or dispatch; preserve security checks and obtain any needed authority before the trigger. Exercise a real process exit and a separate replacement process where restart durability is claimed; an in-memory mock cannot prove datastore atomicity. Verify runtime packaging, effective permissions/timeouts and actual runner replacement separately when those are changed boundaries. Preserve model, source, audio and scientific quality contracts; test equivalent requests/results against the prior path.
+
+**Failure handling:** hold the affected release/activation boundary, retain all receipts and last-good data, diagnose the failing boundary, and re-run only the relevant verification after correction. Do not erase evidence, enlarge retry allowances or substitute a lower-quality output to make the gate pass.
+
+**Evidence limits:** report source review, local fault behavior, deployed identity/configuration, ordinary scheduled execution and observed live recovery separately. None substitutes for another. Reconcile scheduler acceptance and caller HTTP outcomes with authoritative application state; a timeout need not mean work failed. An empty journal after atomic publication cleanup may be correct, but does not prove intermediate persistence or a live fault recovery. State exactly which guarantee starts at durable receipt and which before-receipt loss remains unproven. See [Durable progress and paid-result custody](SOLUTION_DESIGN_PRINCIPLES.md#7-durable-progress-and-paid-result-custody).
 
 ### Project pattern
 
@@ -364,6 +385,7 @@ Untested in production: the unified rubric framing itself. Expected to need one 
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.4.0 | 2026-11-13 | Curated recovery/publication amendment from upstream 1.4.0 (`fca312e`; source SHA-256 `623db94aa6ca3d4f`), including fault and replacement evidence. Earlier curated guidance is retained; this is not a full upstream refresh. |
 | 1.0 | 2026-05-17 | Initial release. Generalized from two validated project patterns. |
 | 1.1 | 2026-09-19 | Skip tier and step 4: a Markdown file a test parses (doc↔code invariant tests) is part of the test surface — run exactly the tests that read it (`grep -rl <filename> tests/`); Markdown no test reads gets a link check only. Example added. Source: 2026-09-18 incident where a project `CLAUDE.md` demanded the full suite before every commit. |
 | 1.1.1 | 2026-10-03 | Hard-gates paragraph: the one-line RSS feed example is tier-Skip, not tier-Quick, matching the tier table and worked examples. Wording fix; no rule change. |
@@ -371,5 +393,5 @@ Untested in production: the unified rubric framing itself. Expected to need one 
 
 ---
 
-**Protocol Version:** 1.1.2
-**Last Updated:** 2026-10-05
+**Protocol Version:** 1.4.0
+**Last Updated:** 2026-11-13

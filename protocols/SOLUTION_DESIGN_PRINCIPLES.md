@@ -5,8 +5,8 @@
 > **Lifecycle:** the **Execute** phase (design discipline) — see [`DEVELOPMENT_LIFECYCLE.md`](DEVELOPMENT_LIFECYCLE.md) for how this fits with the other workflow protocols.
 
 **Applies to:** All new code and non-trivial refactors
-**Last Updated:** 2026-10-03
-**Version:** 1.1.1
+**Last Updated:** 2026-11-13
+**Version:** 1.2.0
 
 ---
 
@@ -97,6 +97,48 @@ When a class of bug must never occur, prefer making the bad state **unrepresenta
 - Invalid state in a model: make it unconstructable (required field, enum, newtype), not validated-on-read in twelve call sites.
 
 The tell that you're on the wrong side of this: you're writing code that *watches for* the bad thing. Ask whether the bad thing can be made impossible instead. (Worked examples — leakage surfaces and why the detector is fragile — in `LEAKAGE_SAFE_BACKTESTING.md`.)
+
+---
+
+### 7. Durable progress and paid-result custody
+
+Apply this required contract when work advances an ingestion cursor, replaces authoritative data, or performs paid or externally consequential steps. The design-speed overrides below do not waive these durability, access or allowance boundaries. Use the existing datastore and the smallest mechanism that satisfies it; a new workflow service is not a requirement.
+
+- **Progress follows durability.** Advance a cursor, validator, content hash or successful-processing marker only when all accepted items are durable in their destination or recoverable staging. Replay pending staged work independently of unchanged-input shortcuts. Track attempted refresh separately from the last successful snapshot.
+- **Publish only validated replacements.** A failed or incomplete refresh must not replace last-good data with empty data. Validate and durably commit the replacement before making it current, using a transaction or equivalent atomic publication pointer with concurrency checks. Preserve the previous usable version until replacement succeeds. Retractions, permission changes and authorised deletion have separate semantics; retained data must not bypass current access or source-use restrictions.
+- **Save paid progress before dependent work.** Durably reserve a logical step before dispatch; persist its received response before parsing, validation, another paid step or publication. Save independent completed results individually. Identity includes the relevant inputs, source snapshot, model/settings and contract version; a changed input invalidates only dependent results. Do not buy again a compatible result already held.
+- **Separate receipt from validation.** A saved raw response is evidence, not proof of a valid result. Persist validation status and any authorised correction ordinal/count. Resume deterministic parsing/validation from that receipt; an invalid result neither vanishes nor gains a fresh allowance. A previously classified invalid response follows the existing bounded correction/hold path rather than cycling through validation forever.
+- **Reconcile uncertainty.** A timeout, process death or lost acknowledgement does not prove non-execution. Keep a durable unresolved intent until an original result or authoritative evidence of non-acceptance resolves it. Disable automatic SDK/transport retries for consequential submissions unless the provider's verified idempotency contract makes them safe under the same logical key and allowance. Proven rejection can return to a bounded, authorised retry policy; an unconfirmed outcome cannot.
+- **Keep admission authoritative.** Atomic ownership, fencing and persistent attempt/allowance state cover every scheduler, manual and CLI entrypoint. Persist the reservation before dispatch; stop new paid work if custody or admission cannot be established. Lease expiry alone never turns a possibly accepted dispatch into permission to resend. Existing production authority remains sufficient for ordinary in-scope calls; this contract grants no new allowance and adds no per-call human approval ceremony.
+- **Keep recovery possible.** Store receipts where they survive the deployed worker/runner replacement boundary. Preserve output fidelity and provenance; no shortened response, reduced model/voice quality or fresh research substituted as a recovery shortcut. Rollback keeps a recovery-aware reader and admission controls. Do not erase journals or disable their checks to clear a hold.
+- **Bound custody explicitly.** Keep recovery data private under the applicable source, privacy and retention policies. Do not persist credentials, authentication headers or secret-bearing signed URLs inside request snapshots or receipts; resolve transport credentials separately at dispatch and use a non-secret account namespace/digest where identity needs it. A completed journal may be removed atomically with verified publication if the project's audit/receipt obligations are satisfied; unresolved paid results and intents must not be swept away as temporary files. This is not permission to retain everything indefinitely.
+
+The following adapter-based example specifies the boundary; it is not a datastore implementation. `reserve(step)` atomically checks identity, current access, ownership and the approved policy, then returns a saved receipt, a hold/busy result, or a newly persisted dispatch reservation. A replacement process reads the same durable store. `saveResponse` verifies and durably seals the complete response (or private object reference plus length/hash) before returning; admission and publication reject stale fences. A verifiably matched late response is still attached immutably to its original dispatch identity (or durably quarantined for reconciliation), even after ownership changes; it cannot overwrite another response or publish under a stale owner. If a write acknowledgement is lost, the next read reconciles its committed state.
+
+```javascript
+async function resumePaidStep(journal, step, invokeOnce) {
+  const claim = await journal.reserve(step);
+  if (claim.kind === "saved") return claim.receipt;
+  if (claim.kind !== "dispatch") {
+    throw new Error(`Step held: ${claim.kind}`);
+  }
+
+  let receipt;
+  try {
+    // One submission. The adapter disables automatic paid-request retries.
+    receipt = await invokeOnce(step.request);
+  } catch (error) {
+    // The original reservation remains unresolved even if this write fails.
+    await journal.recordUnknown(claim.id, claim.fence);
+    throw error;
+  }
+  // Outside the dispatch catch: a save failure must not trigger generation.
+  await journal.saveResponse(claim.id, claim.fence, receipt);
+  return receipt;
+}
+```
+
+This conservative example holds every dispatch exception. A project may reconcile a proven rejection and schedule another eligible attempt; it must not infer rejection from a timeout or generic exception. Backend atomicity and crash survival need the affected-workflow checks in [QA Protocol](QA_PROTOCOL.md#recovery-and-publication-gate). [AI Evals](AI_EVALS.md#shared-foundations) already requires production-generation receipts; its evaluation-specific approval/blinding rules do not become production runtime policy.
 
 ---
 
@@ -279,11 +321,12 @@ An agent that reads one should see a pointer to the other.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2.0 | 2026-11-13 | Durable progress, validated publication and production paid-result custody with explicit uncertainty, privacy and rollback boundaries. |
 | 1.0 | 2026-04-24 | Initial release. Five principles (root cause, parameterize, extract, match spec, readability), five anti-patterns, four override triggers, self-check. Cross-links with BEST_PRACTICES_FIRST. |
 | 1.1 | 2026-06-14 | Added Principle #6 (structural invariant over statistical detector — make the bad state unrepresentable, don't watch for it). From a research project's backtesting-leakage work; cross-links LEAKAGE_SAFE_BACKTESTING. |
 | 1.1.1 | 2026-10-03 | Resources: replaced the dead Martin Fowler "Rule of Three" bliki link (404) with the Wikipedia article. No rule change. |
 
 ---
 
-**Protocol Version**: 1.1.1
-**Last Updated**: 2026-10-03
+**Protocol Version**: 1.2.0
+**Last Updated**: 2026-11-13
