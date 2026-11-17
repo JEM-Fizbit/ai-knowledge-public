@@ -6,8 +6,8 @@
 
 **Applies to:** Claude Code (desktop sessions, subagents), Codex, or any agent surface that can
 start and message other sessions; any task too big or too parallel for one session
-**Last Updated:** 2026-11-11
-**Version:** 1.4
+**Last Updated:** 2026-11-17
+**Version:** 1.5
 
 ---
 
@@ -128,11 +128,17 @@ tends to return it confirmed.
   at a time. Merging branches into the parent's checkout needs the human's say-so where the project
   requires it.
 - Record each landing in the savepoint yourself; update the plan.
+- **Archive a child in the same turn its work lands.** Standing authority; archiving can be undone.
+  First prove its worktree holds nothing unlanded: no uncommitted files, and no commit missing from
+  main. Check with `git cherry` and match subject lines, since a rebased commit lands under a new
+  hash. A child that holds the only copy of unlanded work stays open, named in the savepoint with
+  where that work lives. One the app refuses to archive (a live connection, say) is named to the
+  human once.
 
 ### Closing
 
 - Reconcile every child: landed, stopped, or recorded as left with where its work lives.
-- Archive finished children only on the human's yes.
+- Archive every finished child by the same check; ask the human only for one whose work would be lost.
 - The savepoint names what is still running, not just what finished.
 
 ### Retiring the parent
@@ -320,6 +326,7 @@ Codex parent:
 | Parent retired on a compaction | An idle-hour compaction fired the trigger on a model that did not need it; the switchover cost a morning and every child had to be re-attached. | 12 |
 | Parent stopped when the human did | No loop or goal was set; the children finished into silence and the landings waited for the morning. | — |
 | Parent spun on a condition | A `/goal` was set on a session that had nothing to do but wait; every turn re-read the same reports. | — |
+| Finished children left open | Twenty children sat in the sidebar, fifteen long landed; the human could not see what was still live. | 11 |
 | Goal with no evidence in it | "Finish the feature" was marked done on the model's say-so; nothing in the thread proved it. | 6 |
 
 ---
@@ -357,6 +364,7 @@ Codex parent:
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.5 | 2026-11-17 | The parent archives each child in the turn its work lands, on standing authority, after proving its worktree holds nothing unlanded; replaces "only on the human's yes" for children (the parent's own archive still needs it); one anti-pattern row. |
 | 1.4 | 2026-11-11 | Rule 12 re-based on current vendor guidance: one continuous parent by default on frontier models; a compaction is a check (re-read the savepoint), not a trigger; triggers are a dropped thread, a natural boundary, or a change of model or harness; the default is tied to the model it was checked on; sources listed; one anti-pattern row. |
 | 1.3 | 2026-11-11 | Rule 12 made concrete: the parent counts context-rot triggers (first compaction, a dropped thread, more than eight children or a working day), recommends a fresh parent, and on the human's yes runs a six-step switchover; one anti-pattern row. |
 | 1.2.1 | 2026-11-08 | Published to the public mirror on the owner's decision, so the hub's kick-off prompt can link it; provenance genericised. No rule changes. |
