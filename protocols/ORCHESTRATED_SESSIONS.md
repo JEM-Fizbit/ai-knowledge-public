@@ -6,8 +6,8 @@
 
 **Applies to:** Claude Code (desktop sessions, subagents), Codex, or any agent surface that can
 start and message other sessions; any task too big or too parallel for one session
-**Last Updated:** 2026-11-17
-**Version:** 1.5
+**Last Updated:** 2026-11-25
+**Version:** 2.0
 
 ---
 
@@ -15,7 +15,7 @@ start and message other sessions; any task too big or too parallel for one sessi
 
 - [Overview](#overview)
 - [When to Use](#when-to-use)
-- [Quick Start — the twelve rules](#quick-start--the-twelve-rules)
+- [Quick Start — the sixteen rules](#quick-start--the-sixteen-rules)
 - [The Brief](#the-brief)
 - [Implementation](#implementation)
 - [Kick-off Prompt](#kick-off-prompt)
@@ -32,8 +32,9 @@ start and message other sessions; any task too big or too parallel for one sessi
 A human starting sessions by hand gets collisions: two sessions editing one checkout, two test
 runs sharing one temp folder, a deploy refused because another session's files were dirty, and
 the human as the only router between them. The fix is not fewer sessions but one owner of the
-traffic. A single **parent** session holds the plan, briefs each **child**, verifies each result,
-sequences what lands, and is the only channel to the human.
+traffic. A single **parent** session holds the plan, briefs each **child**, owns the outcome, and is
+the only channel to the human. Children land their own work through a gate that serialises itself:
+the parent is never the integrator, because an integrator is the first bottleneck a long build hits.
 
 This is the bounded, single-task counterpart of
 `AGENTIC_TEAM_DESIGN.md`, which governs standing teams that persist for
@@ -47,7 +48,10 @@ architecture — workers, schedulers and their control surface — and a product
 session" is a defect there, never a use of this protocol.
 
 Distilled from a real project (Oct–Nov 2026): the 4 October "one stream only" rule that answered
-manual-spawning collisions, and the 4 November replacement by a parent-orchestrated model.
+manual-spawning collisions, the 4 November replacement by a parent-orchestrated model, and the
+25 November move (2.0) to daily fresh parents, single-task children that land their own work, and a
+fast proportionate gate, after a parent-as-integrator left 82 commits waiting behind one release for
+12 hours.
 
 ---
 
@@ -68,7 +72,7 @@ manual-spawning collisions, and the 4 November replacement by a parent-orchestra
 
 ---
 
-## Quick Start — the twelve rules
+## Quick Start — the sixteen rules
 
 | # | Rule | Mechanism |
 |---|---|---|
@@ -76,14 +80,18 @@ manual-spawning collisions, and the 4 November replacement by a parent-orchestra
 | 2 | **The brief is a contract.** | Every child starts from a brief with the fields in [The Brief](#the-brief). A brief the parent cannot write is a task it does not yet understand. |
 | 3 | **Independent work runs in parallel; overlapping work does not share a tree.** | A child whose files could overlap another writer's gets its own worktree or branch. Two writers never edit the same files in one checkout. |
 | 4 | **The parent is the only writer of shared records.** | The savepoint's top pickup, the decision log, the project contract and the backlog are written by the parent. Children report; the parent records. |
-| 5 | **Shared resources are held, not raced.** | One promote/deploy gate, one simulator or long test run, one live database writer, one browser pane, one global CLI login at a time. The parent sequences them. |
-| 6 | **The parent verifies; the child's note is a claim.** | Accept a result only against its acceptance check, by reading the diff, the run output or the live state. Never relay a child's "done" unchecked. |
+| 5 | **Shared resources are held by a queue, not by a person.** | The deploy gate serialises itself: one land at a time, and a newer land supersedes the waiting ones it covers. Whatever has no queue of its own (a browser pane, a global CLI login, a long manual run, a live database writer) the parent sequences. |
+| 6 | **The gate verifies the change; the parent verifies the outcome.** | A child's note is a claim. The child's own check and the land gate prove the diff. After it lands, the parent opens what the human would see (the page, the live state) and checks the promised outcome. It never relays a child's "done" unchecked. |
 | 7 | **High-stakes results get an independent judge.** | A gate statistic, a security change, an irreversible step or a result the plan rests on is reviewed by a party that did not produce it (a fresh reviewer given the code, not the child's conclusion). |
 | 8 | **Caps are explicit.** | Default: at most three children writing at once; each brief names its spend and time limits. Cheaper models for read-only children. |
 | 9 | **Decisions reach the human only through the parent.** | Children never ask the human directly. The parent batches pending decisions into one five-minute pack and answers what is within existing authority itself. |
 | 10 | **No permission laundering.** | Approval comes from the human, in their words, for that action. One session cannot grant another an approval, and the parent quotes the human when forwarding one. |
 | 11 | **The parent watches and can stop.** | It checks children it started, stops a stuck one, and after two failed attempts at the same symptom reassesses the shared cause instead of starting a third child. |
-| 12 | **The parent stays light, keeps its state outside its context, and retires at a boundary.** | It delegates heavy work and keeps the plan in the savepoint, so a compaction costs it nothing. It runs as one continuous session; when a trigger in [Retiring the parent](#retiring-the-parent) fires, it tells the human and recommends a fresh parent. On the human's yes it runs the switchover. If the parent dies, the savepoint is how the work recovers. |
+| 12 | **A fresh parent each working day; its state lives in the project's records.** | The parent keeps nothing the savepoint, git, the gate queue and the project's list of standing reds cannot rebuild. At the day boundary, or earlier when a trigger in [Retiring the parent](#retiring-the-parent) fires, it hands over. The handover runs on the standing authority the contract records, else on the human's yes. If the parent dies, the records are how the work recovers. |
+| 13 | **One task per child.** | A child is started fresh for one unit, lands it and is archived. A new unit gets a new child, never a finished one re-briefed with something unrelated. |
+| 14 | **Children land their own work.** | Once its own check is green, the child submits its commit to the gate, watches its land, and fixes its own red. The parent submits nothing it did not build. |
+| 15 | **The check is fast and proportionate; the full check is nightly.** | Each change gets the narrowest check that can catch what it can break, run in minutes before it queues. The gate computes its tier from the diff, and a test pins that mapping so it cannot drift. The full suite or simulation runs on a schedule. |
+| 16 | **Prune monthly.** | Every gate and rule names the last defect it caught. One that caught none in a month is proposed for removal. A rule with no test or mechanism behind it gets one or is cut. |
 
 ---
 
@@ -101,7 +109,8 @@ the brief says.
 | **Stop conditions** | When to stop and report instead of pressing on: a decision only the human can take, an irreversible step, a failed check twice, scope creep. |
 | **Budget** | Model and effort (from `MODEL_EFFORT_SELECTION.md`), spend cap for billed calls, rough time box. |
 | **Shared resources** | Which held resources it needs (deploy gate, simulator, live DB, login) and whether the parent has granted them or it must ask. |
-| **Report** | What its final note must contain: what moved, the evidence, what is unverified, anything it left. |
+| **Landing** | The check it runs before it submits, the land command, and that it watches its land to green or fixes its own red. |
+| **Report** | What its final note must contain: what moved, the evidence (its land's verdict), what is unverified, anything it left. |
 
 Already ruled out and what was tried belongs in the brief too: a child handed only a hypothesis
 tends to return it confirmed.
@@ -123,11 +132,15 @@ tends to return it confirmed.
 ### Running
 
 - Do your own unit while children run; don't poll. Queue long waits detached and take the next item.
-- When a child reports, check its result against its acceptance before anything else uses it.
-- Merge or land children's branches in an order the parent chooses, one through the shared gate
-  at a time. Merging branches into the parent's checkout needs the human's say-so where the project
+- Children land their own work (rule 14): each submits to the gate after its own check is green,
+  watches the verdict and fixes its own red. The gate's queue orders the lands. The parent submits
+  nothing it did not build and spends no turns on queue mechanics.
+- When a child's work goes live, check the outcome it promised, in the running product, before
+  anything else builds on it. A red the child cannot fix in two tries comes back to the parent
+  (rule 11).
+- Merging branches into the parent's checkout still needs the human's say-so where the project
   requires it.
-- Record each landing in the savepoint yourself; update the plan.
+- Record what went live in the savepoint yourself; update the plan.
 - **Archive a child in the same turn its work lands.** Standing authority; archiving can be undone.
   First prove its worktree holds nothing unlanded: no uncommitted files, and no commit missing from
   main. Check with `git cherry` and match subject lines, since a rebased commit lands under a new
@@ -147,17 +160,19 @@ A parent's state lives outside its context: the savepoint, git, the task list an
 That makes a long-running parent safe, and it makes a switch cheap. Whether to keep one parent or start fresh
 depends on the model and harness in use, so this section is re-checked when either changes.
 
-**Default, checked 2026-11-11 (frontier models with automatic compaction): one continuous parent.** Current vendor
-guidance for these models is one session with compaction handling context growth, state kept outside the session,
-and a fresh session at a task boundary. A compaction is not a trigger: a harness may compact a large idle session
-on its own (Claude Code does, shortly before its prompt cache expires), so it says nothing about drift.
+**Default, 2.0 (25 Nov 2026): a fresh parent each working day.** 1.4 made one continuous parent the default,
+following vendor guidance for one long task. Running a multi-week build with many children showed what that misses.
+The parent drifted: it dropped three threads in a day. It also accreted the integrator's job, and the build stalled
+behind it. Teams running agents for weeks converge on periodic fresh starts with their state kept in files (see
+Resources). A day is the natural unit: the gate queue, the nightly checks and the human's own rhythm all turn over
+daily. A compaction is still not a trigger in itself: a harness may compact a large idle session on its own.
 
 **Triggers.** When one fires, say so at the next pause in one line: which trigger fired, and a recommendation
 for a fresh parent.
 - A dropped thread: something it forgot and the human or a child caught. Examples: a commit never landed, a
   child's model not set as asked, a report never relayed. This is the evidence of drift; count it.
-- A natural boundary: the approved batch is finished, or the next work is unrelated to what the parent holds.
-  A fresh parent costs least here, and a long session pays to re-read its history on every turn.
+- A natural boundary: the day ends, the approved batch is finished, or the next work is unrelated to what the
+  parent holds. A fresh parent costs least here, and a long session pays to re-read its history on every turn.
 - A change of model or harness under the parent, or a parent on a smaller or older model than the default was
   checked on. Until it is re-tested there, the older rule applies: recommend a fresh parent at the first compaction.
 
@@ -165,30 +180,31 @@ for a fresh parent.
 child's last report) before acting. If the savepoint could not have rebuilt what the parent needed, that is a
 dropped thread. Children are rotated the same way: at a boundary, after a handover file, never mid-slice.
 
-**Which model.** The answer has moved with model generations. Vendor write-ups record that an earlier mid-tier
-model wound its work down as its context filled, and compaction did not cure it, so fresh-context resets with a
-structured handoff were needed; from Claude Opus 4.5 the same author dropped the resets and ran one continuous
-session, and a Claude Fable 5.2 lead ran a 1,000-agent team for over a day with coordination held in shared tables.
-Treat the default as shown for the frontier Claude tiers (Opus from 4.5, Fable 5.x); for a later Opus it is an
-inference from the tier, not a published check. No equivalent published check was found for Codex or for a
-smaller model as parent: use the older rule there and let the dropped-thread count decide. Every rule in a
-harness encodes an assumption about what the model cannot do; re-test this one when a new model lands.
+**Which model.** Vendor write-ups record that an earlier mid-tier model wound its work down as its context
+filled, and compaction did not cure it. From Claude Opus 4.5 the same author ran one continuous session for one
+task. That evidence is about one task, not about a parent orchestrating many children for weeks, where Cursor still
+needs "periodic fresh starts to combat drift". Every rule in a harness encodes an assumption about what the model
+cannot do; re-test this one when a new model lands.
 
-The human decides. The parent never switches on its own.
+**Who decides.** The project contract records whether the human has pre-approved the daily handover. With that
+approval the parent hands over at the boundary on its own; without it, it recommends and waits for the human's yes.
 
-**Switchover, on the human's yes:**
+**Switchover** (on the recorded standing authority, else on the human's yes):
 1. Finish or park its own unit. Leave nothing half-edited in a shared checkout.
 2. Write the savepoint's top pickup. Include every child (id, state, branch, next step, acceptance check), the
    gate queue, what waits on the human, the pre-approvals in the human's words, and the session's standing lessons.
    Commit it.
 3. Stop its loop or goal, so two parents never act at once. Running children and queued gates keep going; stop
    none of them for the switch.
-4. Give the human a short kickoff prompt naming the savepoint, with a recommended model and effort for the new
-   parent.
+4. Start the new parent with the kick-off prompt naming the savepoint, on the recommended model and effort. In
+   Claude Code: a new session whose first message is the `/loop` prompt; check on first use that the loop took,
+   and if it did not, give the human the prompt to type.
 5. The new parent reads the savepoint, verifies live state, and messages each child: "I am your parent now;
    report to me". A child's finished turn wakes only the session that started it, so until then the old
    parent relays.
-6. Archive the old parent once the new one confirms it has every child, and only on the human's yes.
+6. Archive the old parent once the new one confirms it has every child (on the standing authority, else on the
+   human's yes). With single-task children (rule 13) most have landed and been archived by the boundary, so the
+   re-attach list is short.
 
 ### Cross-vendor children
 
@@ -216,6 +232,7 @@ the commands, the permissions that contain the driven agent, and what each vendo
 | Child on the other vendor's model | `codex exec` from Bash: read-only sandbox unless told otherwise, and only once the human approves it or a permission rule allows it; same brief, same rules |
 | Parent kept working between reports | `/loop <prompt>` with no interval, typed by the human: Claude picks each wait (1 min–1 h) and stops when done or on Esc. The desktop app also wakes the parent when a child session finishes a turn; `/loop` covers what nothing else will wake it for |
 | Child working to a finish line | `/goal <condition>` with a checkable condition and a turn or time clause ("or stop after 20 turns") |
+| Daily handover | The old parent calls `start_session` with the kick-off prompt starting with `/loop`, then messages each open child with the new parent's id |
 | Many subagents from one script | The `Workflow` tool (dynamic workflows), opted into only by the human writing `ultracode`; a run can use meaningfully more tokens than the same task in conversation |
 
 ### Codex mapping
@@ -232,7 +249,7 @@ The rules are the same; the mechanisms differ in ways that change how the parent
 | Isolation | Subagents share the parent's checkout and sandbox; the `worktrees` feature is experimental and off | Give each writing child its own `git worktree add` folder (or a cloud task). A read-only child is read-only only by instruction: use the built-in `explorer` or a custom agent with `features.shell_tool = false`. |
 | Model and effort | Per child: an explicit spawn value, a custom agent in `.codex/agents/*.toml` (`model`, `model_reasoning_effort`), or `[agents]` defaults; otherwise inherited | No parent ceiling, so a child may run a stronger or cheaper model than the parent. Pick it per brief. |
 | Concurrency cap (rule 8) | `agents.max_concurrent_threads_per_session` (legacy `agents.max_threads`); unset = 6 spawned threads in code ([#13964](https://github.com/openai/codex/issues/13964)), though the docs say only "Codex chooses" | It counts readers as well as writers, so it cannot express rule 8's writer limit: keep that in the briefs and worktrees, and leave the default unless memory runs short. Multi-agent v2, which a model's catalog entry can switch on, ignores it and uses `features.multi_agent_v2.max_concurrent_threads_per_session`, which counts the main thread ([#26254](https://github.com/openai/codex/issues/26254)). |
-| Approvals (rules 9, 10) | Children inherit the parent's sandbox and approval mode; a custom agent file cannot change them. In `codex exec`, an action needing a new approval fails back to the parent | Set the permission mode before delegating. Keep credentialed steps (push, deploy) with the parent, which fits rules 4 and 5 anyway. |
+| Approvals (rules 9, 10) | Children inherit the parent's sandbox and approval mode; a custom agent file cannot change them. In `codex exec`, an action needing a new approval fails back to the parent | Set the permission mode before delegating. Where a child cannot push or submit, the parent submits its commit for it, mechanically and without re-reviewing it: rule 14 still means the child's check and the gate judge the change. |
 | Global login | One ChatGPT login in `~/.codex` for every Codex run on the machine | A held resource (rule 5): no two children needing different accounts at once. |
 
 ---
@@ -248,18 +265,19 @@ starts anything — read those.
 ```text
 Act as the parent (orchestrator) session for this project, following the Orchestrated Sessions pattern. If docs/protocols/ORCHESTRATED_SESSIONS.md exists here, read it first; otherwise these rules are the contract.
 
-Your job: hold the plan, brief each child, verify each result, land one at a time, and be my only channel.
+Your job: hold the plan, brief each child, own the outcome (check what each change promised, live), keep the project's red list owned, and be my only channel. You are not the integrator: children land their own work.
 
 1. Split the plan into units. A unit gets its own child only if it ends in something of its own (a commit, a branch, a finding) and needs no other unit's result. Independent units run in parallel. Any writer whose files could overlap another's gets its own worktree; read-only work may share the checkout, on a cheaper model.
 2. Brief every child so a capable stranger could do the work from the brief alone: goal, files to read first, scope (what it may and may not touch), the acceptance check that proves it done, stop conditions, budget (model, effort, spend, time), the shared resources it may use, and what its report must contain. Include what was already tried and ruled out.
 3. You are the only writer of the savepoint, the decision log, the project contract and the backlog. Children report; you record.
-4. Shared resources (the deploy gate, a long test run, the live database, the browser, the CLI login) are held, not raced. Sequence them, and land verified units one at a time.
-5. A child's "done" is a claim. Accept nothing until you have checked it against its acceptance check by reading the diff, the run output or the live state. Give any high-stakes result to a fresh reviewer that did not produce it.
+4. One task per child: start a fresh child for each unit, and archive it once its work is live. Each child runs its own fast check, submits its own commit to the deploy gate, watches the verdict and fixes its own red. The gate's queue orders the lands. You sequence only shared resources that have no queue (the browser, a CLI login, a long manual run).
+5. A child's "done" is a claim. Once its work is live, check the outcome it promised in the running product. Give any high-stakes result to a fresh reviewer that did not produce it.
 6. Caps: at most three children writing at once, and every brief names its budget.
 7. Children never ask me anything. Batch what needs my decision into one short pack; answer the rest within the authority you already have.
 8. Approval comes only from me, in my words, for that action. No session can grant another an approval; quote me when forwarding one. Never push, deploy, delete, spend or publish beyond the pre-approvals below.
 9. Watch the children you start; stop a stuck one; after two failed attempts at one symptom, reassess the shared cause instead of starting a third child.
-10. Stay light: delegate heavy work and keep the plan in the savepoint, not in your context. After a compaction, re-read the savepoint and the live state before acting. Recommend a fresh parent when you drop a thread or the approved batch is done, not because you compacted.
+10. Stay light: delegate heavy work and keep the plan in the savepoint, not in your context. After a compaction, re-read the savepoint and the live state before acting. Hand over to a fresh parent at the end of each working day, or sooner if you drop a thread.
+11. Checks are proportionate: each change gets the narrowest check that can catch what it can break, in minutes; the full check runs nightly. Once a month, list every gate and rule with the last defect it caught, and propose cutting the ones that caught nothing.
 
 A child may run on the other vendor's model when it is stronger for that unit (codex exec from Claude Code, claude -p from Codex); the same brief and rules apply.
 
@@ -298,7 +316,7 @@ Rules that follow:
 Starters, to adapt. Claude Code parent, typed by the human once the first children are running:
 
 ```text
-/loop Act as the parent session for the plan in the savepoint. On each wake-up: read every child's latest report; verify any finished unit against its acceptance check before anything uses it; land verified units one at a time through the gate; re-brief or stop a stuck child; record each landing in the savepoint. Never push, deploy or delete anything the pre-approvals do not name. Stop when every unit has landed or been recorded as left, and write the morning report.
+/loop Act as the parent session for the plan in the savepoint. On each wake-up: give every standing red an owner; read each child's latest report; once a child's work is live, check the outcome it promised in the running product; stop or replace a stuck child; record what went live in the savepoint. Children land their own work; you submit nothing you did not build. Never push, deploy or delete anything the pre-approvals do not name. At the end of the working day, hand over to a fresh parent.
 ```
 
 Codex parent:
@@ -326,6 +344,11 @@ Codex parent:
 | Parent retired on a compaction | An idle-hour compaction fired the trigger on a model that did not need it; the switchover cost a morning and every child had to be re-attached. | 12 |
 | Parent stopped when the human did | No loop or goal was set; the children finished into silence and the landings waited for the morning. | — |
 | Parent spun on a condition | A `/goal` was set on a session that had nothing to do but wait; every turn re-read the same reports. | — |
+| Parent as integrator | Every child pushed and waited for the parent to submit; the parent spent its turns on queue mechanics, and 82 commits sat behind one release for 12 hours. | 14 |
+| A finished child re-briefed | A child started for one fix was on its fourth unrelated task, carrying stale context into each. | 13 |
+| The whole gate for a one-line change | Every page fix ran a 25-minute simulation of workers it could not touch; four single-check reds in a row cost three hours. | 15 |
+| A rule overridden by later code | An agreed "proportionate checks" rule lived only in prose; a later gate rule won in code, and nobody noticed for three weeks. | 15, 16 |
+| One continuous parent for weeks | After days of context the parent reported a fix live that wasn't and left a red unread. | 12 |
 | Finished children left open | Twenty children sat in the sidebar, fifteen long landed; the human could not see what was still live. | 11 |
 | Goal with no evidence in it | "Finish the feature" was marked done on the model's say-so; nothing in the thread proved it. | 6 |
 
@@ -348,7 +371,8 @@ Codex parent:
 
 ## Resources
 
-- Sources for rule 12, checked 2026-11-11: [Effective harnesses for long-running agents](https://www.anthropic.com/research/effective-harnesses-for-long-running-agents) (Nov 2025); [Harness design for long-running apps](https://www.anthropic.com/research/harness-design-long-running-apps) (Mar 2026); [Claude Code best practices](https://code.claude.com/docs/en/best-practices); [Safely scaling multi-agent teams with Claude Fable 5.2](https://claude.dev/blog/safely-scaling-multi-agent-teams-with-fable-5-2/) (Nov 2026)
+- Sources for 1.4's rule 12 (one continuous parent), checked 2026-11-11: [Effective harnesses for long-running agents](https://www.anthropic.com/research/effective-harnesses-for-long-running-agents) (Nov 2025); [Harness design for long-running apps](https://www.anthropic.com/research/harness-design-long-running-apps) (Mar 2026); [Claude Code best practices](https://code.claude.com/docs/en/best-practices); [Safely scaling multi-agent teams with Claude Fable 5.2](https://claude.dev/blog/safely-scaling-multi-agent-teams-with-fable-5-2/) (Nov 2026)
+- Sources for 2.0, read 2026-11-25: [Building a C compiler with a team of parallel Claudes](https://www.anthropic.com/research/building-c-compiler) (Feb 2026: fresh session per loop, lock files, a fast sampled test run as the oracle, workers push their own work); [Scaling long-running autonomous coding](https://cursor.com/blog/scaling-agents) (Cursor, Jan 2026: planners, workers and a judge; the integrator role removed as a bottleneck; periodic fresh starts against drift)
 - `AGENTIC_TEAM_DESIGN.md` — standing teams; rules 1, 4, 5, 8 are shared
 - [SESSION_HANDOFF_SAVE_POINTS](SESSION_HANDOFF_SAVE_POINTS.md) — the savepoint the parent owns
 - `MODEL_EFFORT_SELECTION.md` — per-child model and effort
@@ -364,6 +388,7 @@ Codex parent:
 
 | Version | Date | Changes |
 |---|---|---|
+| 2.0 | 2026-11-25 | Children are single-task and land their own work through a self-serialising gate (rules 13, 14); the parent owns outcomes, not the queue (rules 5, 6); a fresh parent each working day, on standing authority where the contract records it (rule 12, replacing 1.4's one continuous parent); checks are fast and proportionate, with the gate's tier pinned by a test (rule 15); monthly prune (rule 16); brief gains a Landing field; kick-off and `/loop` prompts, mappings and five anti-patterns updated. From a project where the parent-as-integrator left 82 commits waiting 12 hours. |
 | 1.5 | 2026-11-17 | The parent archives each child in the turn its work lands, on standing authority, after proving its worktree holds nothing unlanded; replaces "only on the human's yes" for children (the parent's own archive still needs it); one anti-pattern row. |
 | 1.4 | 2026-11-11 | Rule 12 re-based on current vendor guidance: one continuous parent by default on frontier models; a compaction is a check (re-read the savepoint), not a trigger; triggers are a dropped thread, a natural boundary, or a change of model or harness; the default is tied to the model it was checked on; sources listed; one anti-pattern row. |
 | 1.3 | 2026-11-11 | Rule 12 made concrete: the parent counts context-rot triggers (first compaction, a dropped thread, more than eight children or a working day), recommends a fresh parent, and on the human's yes runs a six-step switchover; one anti-pattern row. |
